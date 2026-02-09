@@ -60,21 +60,27 @@
                             <span class="text nav-text">Gallery</span>
                         </a>
                     </li>
-                    <li class="nav-link">
-                        <a href="engineers.html">
-                            <i class='bx bx-user icon'></i>
-                            <span class="text nav-text">Engineers</span>
-                        </a>
-                    </li>
+          <li class="nav-link">
+            <a href="engineers.html">
+              <i class='bx bx-user icon'></i>
+              <span class="text nav-text">Engineers</span>
+            </a>
+          </li>
+          <li class="nav-link admin-only" data-admin-only>
+            <a href="admin.html">
+              <i class='bx bx-shield icon'></i>
+              <span class="text nav-text">Admin</span>
+            </a>
+          </li>
                 </ul>
             </div>
             <div class="bottom-content">
-                <li class="">
-                    <a href="#">
-                        <i class='bx bx-log-out icon'></i>
-                        <span class="text nav-text">Logout</span>
-                    </a>
-                </li>
+        <li class="">
+          <a href="index.html" data-logout="true">
+            <i class='bx bx-log-out icon'></i>
+            <span class="text nav-text">Logout</span>
+          </a>
+        </li>
                 <li class="mode">
                     <div class="moon-sun">
                         <i class='bx bx-moon icon moon'></i>
@@ -604,6 +610,7 @@
         </div>
     </div>
 
+    <script src="auth-guard.js"></script>
     <script src="config.js"></script>
     <script src="projects.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>

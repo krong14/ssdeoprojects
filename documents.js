@@ -109,6 +109,56 @@ const contractFilesDataKey = "contractFilesData";
 const apiBase = getApiBase();
 const useRemoteStorage = Boolean(apiBase);
 const remoteDocCache = new Map();
+const SESSION_KEY = "dpwh_current_user";
+
+function getCurrentUser() {
+  if (window.DPWH_CURRENT_USER) return window.DPWH_CURRENT_USER;
+  const raw = localStorage.getItem(SESSION_KEY) || sessionStorage.getItem(SESSION_KEY);
+  if (!raw) return null;
+  try {
+    return JSON.parse(raw);
+  } catch (err) {
+    return null;
+  }
+}
+
+const currentUser = getCurrentUser();
+const currentUserName = String(currentUser?.name || "").trim();
+const isAdminUser = Boolean(currentUser?.isAdmin);
+let allowedContracts = new Set();
+
+function normalizePersonName(value) {
+  return String(value || "").trim().toLowerCase();
+}
+
+function splitNames(value) {
+  return String(value || "")
+    .split(/[,/;]+/)
+    .map(part => part.trim())
+    .filter(Boolean);
+}
+
+function userMatchesName(value) {
+  if (!currentUserName) return false;
+  const target = normalizePersonName(currentUserName);
+  const candidates = splitNames(value);
+  return candidates.some(name => normalizePersonName(name) === target);
+}
+
+function isUserInCharge(inChargeData) {
+  if (isAdminUser) return true;
+  if (!currentUserName || !inChargeData) return false;
+  return Object.values(inChargeData).some(value => userMatchesName(value));
+}
+
+function setAllowedContracts(list) {
+  allowedContracts = new Set(list.map(normalizeContractId));
+}
+
+function canModifyContract(contractId) {
+  if (isAdminUser) return true;
+  return allowedContracts.has(normalizeContractId(contractId));
+}
 
 function loadContractFiles() {
   const raw = localStorage.getItem(contractFilesKey);
@@ -461,6 +511,10 @@ document.addEventListener("click", async (e) => {
       if (!panel) return;
       const section = panel.dataset.section || "";
       const contract = panel.dataset.contract || "";
+      if (!canModifyContract(contract)) {
+        alert("You don't have permission to modify this project.");
+        return;
+      }
       const doc = deleteBtn.dataset.doc || "";
       const subitem = deleteBtn.closest(".toc-subitem");
       if (useRemoteStorage) {
@@ -500,6 +554,11 @@ document.addEventListener("click", async (e) => {
     if (!panel) return;
     const section = panel.dataset.section || "";
     const contract = panel.dataset.contract || "";
+    if (!canModifyContract(contract)) {
+      alert("You don't have permission to upload documents for this project.");
+      input.value = "";
+      return;
+    }
     const file = input.files?.[0];
     if (!file) return;
     const doc = input.dataset.doc || "";
@@ -587,7 +646,19 @@ document.addEventListener("click", async (e) => {
     .then(data => {
       if (!data.success) throw new Error('Failed');
       const projects = data.projects || [];
-      const contracts = projects.map(p => String(p['CONTRACT ID'] || '').trim()).filter(Boolean);
+      const visibleProjects = isAdminUser ? projects : projects.filter(p => {
+        const inCharge = {
+          projectEngineer: p["PROJECT ENGINEER"] || "",
+          materialsEngineer: p["MATERIALS ENGINEER"] || "",
+          projectInspector: p["PROJECT INSPECTOR"] || "",
+          residentEngineer: p["RESIDENT ENGINEER"] || "",
+          qaInCharge: p["QUALITY ASSURANCE IN-CHARGE"] || "",
+          contractorMaterialsEngineer: p["CONTRACTORS MATERIALS ENGINEER"] || ""
+        };
+        return isUserInCharge(inCharge);
+      });
+      const contracts = visibleProjects.map(p => String(p['CONTRACT ID'] || '').trim()).filter(Boolean);
+      setAllowedContracts(contracts);
       renderContracts(contracts);
       openSectionFromDashboard();
     })

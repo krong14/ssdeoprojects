@@ -177,6 +177,10 @@ body.dark {
   align-items: center;
 }
 
+.sidebar .nav-link.admin-only {
+  display: none;
+}
+
 .sidebar li .icon {
   display: flex;
   align-items: center;

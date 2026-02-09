@@ -56,6 +56,53 @@ function getApiBase() {
 const apiBase = getApiBase();
 const useRemoteStorage = Boolean(apiBase);
 const remoteGalleryCache = new Map();
+const SESSION_KEY = "dpwh_current_user";
+
+function getCurrentUser() {
+  if (window.DPWH_CURRENT_USER) return window.DPWH_CURRENT_USER;
+  const raw = localStorage.getItem(SESSION_KEY) || sessionStorage.getItem(SESSION_KEY);
+  if (!raw) return null;
+  try {
+    return JSON.parse(raw);
+  } catch (err) {
+    return null;
+  }
+}
+
+const currentUser = getCurrentUser();
+const currentUserName = String(currentUser?.name || "").trim();
+const isAdminUser = Boolean(currentUser?.isAdmin);
+const galleryPermissions = new Map();
+
+function normalizePersonName(value) {
+  return String(value || "").trim().toLowerCase();
+}
+
+function splitNames(value) {
+  return String(value || "")
+    .split(/[,/;]+/)
+    .map(part => part.trim())
+    .filter(Boolean);
+}
+
+function userMatchesName(value) {
+  if (!currentUserName) return false;
+  const target = normalizePersonName(currentUserName);
+  const candidates = splitNames(value);
+  return candidates.some(name => normalizePersonName(name) === target);
+}
+
+function isUserInCharge(inChargeData) {
+  if (isAdminUser) return true;
+  if (!currentUserName || !inChargeData) return false;
+  return Object.values(inChargeData).some(value => userMatchesName(value));
+}
+
+function canManageContract(contractId) {
+  if (isAdminUser) return true;
+  const key = normalizeContractId(contractId);
+  return galleryPermissions.get(key) === true;
+}
 
 toggle?.addEventListener("click", () => {
   sidebar.classList.toggle("close");
@@ -142,6 +189,10 @@ async function deleteRemoteGallery(contractId) {
 
 function addPhotosForContract(contractId, files) {
   if (!contractId || !files?.length) return;
+  if (!canManageContract(contractId)) {
+    alert("You don't have permission to upload photos for this project.");
+    return;
+  }
   if (useRemoteStorage) {
     const key = normalizeContractId(contractId);
     uploadRemoteGallery(key, files)
@@ -172,16 +223,12 @@ function addPhotosForContract(contractId, files) {
   });
 }
 
-function renderAlbum(contractId, description) {
+function renderAlbum(contractId, description, canManage = true) {
   if (!galleryGrid) return;
   const key = normalizeContractId(contractId);
   const card = document.createElement("div");
   card.className = "gallery-card";
-  card.innerHTML = `
-    <div class="gallery-info">
-      <div class="album-header">
-        <div class="album-title">${key} - Geotagged Photos</div>
-        <div class="album-actions">
+  const actionsHtml = canManage ? `
           <label class="album-upload-btn">
             <i class='bx bx-upload'></i>
             Upload
@@ -191,6 +238,15 @@ function renderAlbum(contractId, description) {
             <i class='bx bx-trash'></i>
             Delete
           </button>
+  ` : `
+          <span class="album-readonly">View only</span>
+  `;
+  card.innerHTML = `
+    <div class="gallery-info">
+      <div class="album-header">
+        <div class="album-title">${key} - Geotagged Photos</div>
+        <div class="album-actions">
+          ${actionsHtml}
         </div>
       </div>
       <div class="gallery-thumb">Loading photos...</div>
@@ -292,6 +348,10 @@ galleryGrid?.addEventListener("click", (e) => {
   if (deleteBtn) {
     const contractId = deleteBtn.dataset.contract;
     if (!contractId) return;
+    if (!canManageContract(contractId)) {
+      alert("You don't have permission to delete photos for this project.");
+      return;
+    }
     const confirmed = confirm(`Delete all photos for ${contractId}?`);
     if (!confirmed) return;
     if (useRemoteStorage) {
@@ -397,6 +457,7 @@ function renderRecentUploads(filterText = "") {
 async function renderGalleryAlbums() {
   if (!galleryGrid) return;
   galleryGrid.innerHTML = "";
+  galleryPermissions.clear();
   const search = String(gallerySearch?.value || "").trim().toLowerCase();
   if (!apiBase) {
     renderRecentUploads(search);
@@ -413,6 +474,17 @@ async function renderGalleryAlbums() {
       const description = p["CONTRACT NAME/LOCATION"] || "";
       if (!contractId) return false;
       if (search && !`${contractId} ${description}`.toLowerCase().includes(search)) return false;
+      if (!isAdminUser) {
+        const inCharge = {
+          projectEngineer: p["PROJECT ENGINEER"] || "",
+          materialsEngineer: p["MATERIALS ENGINEER"] || "",
+          projectInspector: p["PROJECT INSPECTOR"] || "",
+          residentEngineer: p["RESIDENT ENGINEER"] || "",
+          qaInCharge: p["QUALITY ASSURANCE IN-CHARGE"] || "",
+          contractorMaterialsEngineer: p["CONTRACTORS MATERIALS ENGINEER"] || ""
+        };
+        if (!isUserInCharge(inCharge)) return false;
+      }
       return true;
     });
 
@@ -429,7 +501,17 @@ async function renderGalleryAlbums() {
       const contractId = p["CONTRACT ID"] || "";
       const description = p["CONTRACT NAME/LOCATION"] || "";
       if (!contractId) return;
-      renderAlbum(contractId, description);
+      const inCharge = {
+        projectEngineer: p["PROJECT ENGINEER"] || "",
+        materialsEngineer: p["MATERIALS ENGINEER"] || "",
+        projectInspector: p["PROJECT INSPECTOR"] || "",
+        residentEngineer: p["RESIDENT ENGINEER"] || "",
+        qaInCharge: p["QUALITY ASSURANCE IN-CHARGE"] || "",
+        contractorMaterialsEngineer: p["CONTRACTORS MATERIALS ENGINEER"] || ""
+      };
+      const canManage = isAdminUser || isUserInCharge(inCharge);
+      galleryPermissions.set(normalizeContractId(contractId), canManage);
+      renderAlbum(contractId, description, canManage);
     });
   } catch (err) {
     console.warn("Failed to load projects for gallery:", err);

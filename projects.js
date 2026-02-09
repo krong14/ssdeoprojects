@@ -1,4 +1,4 @@
-const body = document.querySelector("body")
+﻿const body = document.querySelector("body")
 const sidebar = body.querySelector(".sidebar")
 const toggle = body.querySelector(".toggle")
 const modeSwitch = body.querySelector(".toggle-switch")
@@ -33,6 +33,121 @@ function getApiBase() {
     const host = window.location.hostname;
     const isLocal = host === "localhost" || host === "127.0.0.1";
     return isLocal ? `${window.location.protocol}//${host}:3000` : "";
+}
+
+const SESSION_KEY = "dpwh_current_user";
+function getCurrentUser() {
+    if (window.DPWH_CURRENT_USER) return window.DPWH_CURRENT_USER;
+    const raw = localStorage.getItem(SESSION_KEY) || sessionStorage.getItem(SESSION_KEY);
+    if (!raw) return null;
+    try {
+        return JSON.parse(raw);
+    } catch (err) {
+        return null;
+    }
+}
+
+const currentUser = getCurrentUser();
+const currentUserName = String(currentUser?.name || "").trim();
+const isAdminUser = Boolean(currentUser?.isAdmin);
+const NOTIF_PREFIX = "dpwh_notifications_";
+
+function normalizePersonName(value) {
+    return String(value || "").trim().toLowerCase();
+}
+
+function splitNames(value) {
+    return String(value || "")
+        .split(/[,/;]+/)
+        .map(part => part.trim())
+        .filter(Boolean);
+}
+
+function userMatchesName(value) {
+    if (!currentUserName) return false;
+    const target = normalizePersonName(currentUserName);
+    const candidates = splitNames(value);
+    return candidates.some(name => normalizePersonName(name) === target);
+}
+
+function isUserInCharge(inChargeData) {
+    if (isAdminUser) return true;
+    if (!currentUserName || !inChargeData) return false;
+    return Object.values(inChargeData).some(value => userMatchesName(value));
+}
+
+function getRowInCharge(row) {
+    if (!row) return {};
+    try {
+        return row.dataset.inCharge ? JSON.parse(row.dataset.inCharge) : {};
+    } catch (err) {
+        return {};
+    }
+}
+
+function getProjectPermissions(inChargeData) {
+    const inCharge = isUserInCharge(inChargeData);
+    return {
+        canView: isAdminUser || inCharge,
+        canUpdate: isAdminUser || inCharge,
+        canEdit: isAdminUser,
+        canDelete: isAdminUser
+    };
+}
+
+function getNotificationKey() {
+    const email = String(currentUser?.email || "guest").trim().toLowerCase();
+    return `${NOTIF_PREFIX}${email || "guest"}`;
+}
+
+function loadNotifications() {
+    const raw = localStorage.getItem(getNotificationKey());
+    if (!raw) return [];
+    try {
+        const parsed = JSON.parse(raw);
+        return Array.isArray(parsed) ? parsed : [];
+    } catch (err) {
+        return [];
+    }
+}
+
+function saveNotifications(list) {
+    localStorage.setItem(getNotificationKey(), JSON.stringify(list));
+}
+
+function ensureToastContainer() {
+    let container = document.getElementById("toastContainer");
+    if (container) return container;
+    container = document.createElement("div");
+    container.id = "toastContainer";
+    container.className = "toast-container";
+    document.body.appendChild(container);
+    return container;
+}
+
+function showToast(message, type = "info") {
+    const container = ensureToastContainer();
+    const toast = document.createElement("div");
+    toast.className = `toast ${type}`;
+    toast.textContent = message;
+    container.appendChild(toast);
+    setTimeout(() => toast.classList.add("show"), 10);
+    setTimeout(() => {
+        toast.classList.remove("show");
+        setTimeout(() => toast.remove(), 300);
+    }, 3800);
+}
+
+function addNotification(message, meta = {}) {
+    const list = loadNotifications();
+    list.unshift({
+        id: `${Date.now()}-${Math.random().toString(16).slice(2, 8)}`,
+        message,
+        createdAt: new Date().toISOString(),
+        ...meta
+    });
+    saveNotifications(list.slice(0, 50));
+    showToast(message, "success");
 }
 
 const engineersStorageKey = "engineersDirectory";
@@ -245,6 +360,18 @@ function renderEngineerDetails(containerId, engineerName, directory) {
     container.appendChild(meta);
 }
 
+function applyDetailsPermissions(canEdit) {
+    currentDetailsCanEdit = Boolean(canEdit);
+    if (addPowDetailsItemBtn) {
+        addPowDetailsItemBtn.disabled = !currentDetailsCanEdit;
+        addPowDetailsItemBtn.title = currentDetailsCanEdit ? "" : "View only";
+    }
+    if (openVariationOrderBtn) {
+        openVariationOrderBtn.disabled = !currentDetailsCanEdit;
+        openVariationOrderBtn.title = currentDetailsCanEdit ? "" : "View only";
+    }
+}
+
 toggle.addEventListener("click", () => {
     sidebar.classList.toggle("close");
     const isOpen = !sidebar.classList.contains("close")
@@ -299,6 +426,11 @@ let isSavingProject = false;
 let saveProjectToken = 0;
 const addPowDetailsItemBtn = document.getElementById("addPowDetailsItem");
 const powVariationContainer = document.getElementById("powVariationContainer");
+let currentDetailsCanEdit = false;
+
+if (openBtn && !isAdminUser) {
+    openBtn.style.display = "none";
+}
 const draftFieldIds = [
     "contractId",
     "contractDescription",
@@ -413,6 +545,10 @@ function setModalMode(edit, row = null) {
 // OPEN MODAL
 // --------------------
 openBtn?.addEventListener("click", () => {
+    if (!isAdminUser) {
+        alert("Only the admin can add new projects.");
+        return;
+    }
     populateEngineerDatalists();
     setModalMode(false);
     resetModal();
@@ -591,6 +727,12 @@ saveUpdateBtn?.addEventListener("click", (event) => {
     let targetRow = updatingRow || findRowByContractId(contractId);
     if (!targetRow) {
         alert("Unable to find the row to update.");
+        return;
+    }
+
+    const updatePerms = getProjectPermissions(getRowInCharge(targetRow));
+    if (!updatePerms.canUpdate) {
+        alert("You don't have permission to update this project.");
         return;
     }
 
@@ -1152,6 +1294,32 @@ function getCompletionDisplay(accomplishment, latestDate) {
     return "-";
 }
 
+function renderActionButtons(perms) {
+    const buttons = [];
+    if (perms.canUpdate) {
+        buttons.push(`
+            <button class="report-btn update-btn" type="button">
+                <i class='bx bx-refresh'></i> Update
+            </button>
+        `);
+    }
+    if (perms.canEdit) {
+        buttons.push(`
+            <button class="report-btn edit-btn" type="button">
+                <i class='bx bx-edit'></i> Edit
+            </button>
+        `);
+    }
+    if (perms.canDelete) {
+        buttons.push(`
+            <button class="report-btn delete-btn" type="button">
+                <i class='bx bx-trash'></i> Delete
+            </button>
+        `);
+    }
+    return `<div class="report-actions">${buttons.join("")}</div>`;
+}
+
 function parseCoordinates(value) {
     const raw = String(value || "").trim();
     if (!raw) return null;
@@ -1186,6 +1354,10 @@ async function deleteProject(contractId) {
 }
 
 saveBtn.addEventListener("click", () => {
+    if (!isAdminUser) {
+        alert("Only the admin can add or edit projects.");
+        return;
+    }
     if (isSavingProject) return;
     isSavingProject = true;
     if (saveBtn) saveBtn.disabled = true;
@@ -1317,6 +1489,13 @@ saveBtn.addEventListener("click", () => {
             setProjectMeta(contractId, { location: safeLocation, coordinates: safeCoordinates });
             setProjectPow(contractId, programWorks);
 
+            if (!isEditing && isUserInCharge(inChargeData)) {
+                addNotification(`You were assigned as in-charge for ${contractId} - ${description}.`, {
+                    contractId,
+                    type: "assignment"
+                });
+            }
+
             if (isEditing && editingRow) {
     setRowDataAttributes(editingRow, rowData);
                 editingRow.dataset.inCharge = JSON.stringify(inChargeData);
@@ -1335,6 +1514,7 @@ saveBtn.addEventListener("click", () => {
                 setRowDataAttributes(tr, rowData);
                 tr.dataset.inCharge = JSON.stringify(inChargeData);
 
+                const perms = getProjectPermissions(inChargeData);
                 tr.innerHTML = `
                   <td>
                     <strong>${contractId}</strong> \u2013 ${description}
@@ -1345,19 +1525,7 @@ saveBtn.addEventListener("click", () => {
                     <td>${renderProgressPill(rowData.accomplishment || 0)}</td>
                     <td>${rowData.status || "-"}</td>
                       <td>${getCompletionDisplay(rowData.accomplishment || 0, rowData.completionDate)}</td>
-                    <td>
-                      <div class="report-actions">
-                        <button class="report-btn update-btn" type="button">
-                          <i class='bx bx-refresh'></i> Update
-                        </button>
-                        <button class="report-btn edit-btn" type="button">
-                          <i class='bx bx-edit'></i> Edit
-                        </button>
-                        <button class="report-btn delete-btn" type="button">
-                          <i class='bx bx-trash'></i> Delete
-                        </button>
-                      </div>
-                    </td>
+                    <td>${renderActionButtons(perms)}</td>
                   `;
 
                   tableBody.appendChild(tr);
@@ -1451,6 +1619,10 @@ async function fetchProjects() {
                                 qaInCharge: p['QUALITY ASSURANCE IN-CHARGE'] || '',
                                 contractorMaterialsEngineer: p['CONTRACTORS MATERIALS ENGINEER'] || ''
                         };
+                        const perms = getProjectPermissions(inChargeData);
+                        if (!perms.canView) {
+                                return;
+                        }
 
                         const tr = document.createElement('tr');
                         const rowData = {
@@ -1503,19 +1675,7 @@ async function fetchProjects() {
                             <td>${renderProgressPill(rowData.accomplishment)}</td>
                             <td>${rowData.status || '-'}</td>
                             <td>${getCompletionDisplay(rowData.accomplishment, rowData.completionDate)}</td>
-                            <td>
-                                <div class="report-actions">
-                                    <button class="report-btn update-btn" type="button">
-                                        <i class='bx bx-refresh'></i> Update
-                                    </button>
-                                    <button class="report-btn edit-btn" type="button">
-                                        <i class='bx bx-edit'></i> Edit
-                                    </button>
-                                    <button class="report-btn delete-btn" type="button">
-                                        <i class='bx bx-trash'></i> Delete
-                                    </button>
-                                </div>
-                            </td>
+                            <td>${renderActionButtons(perms)}</td>
                         `;
 
                         tableBody.appendChild(tr);
@@ -1625,6 +1785,7 @@ const closeDetailsBtn = document.getElementById("closeDetailsModal");
 // Close
 closeDetailsBtn?.addEventListener("click", () => {
     detailsModal.classList.remove("open");
+    applyDetailsPermissions(false);
 });
 
 // Open when clicking table row (ignore edit/delete buttons)
@@ -1634,6 +1795,11 @@ tableBody.addEventListener("click", async (e) => {
         e.stopPropagation();
         const row = updateBtn.closest("tr");
         if (!row) return;
+        const perms = getProjectPermissions(getRowInCharge(row));
+        if (!perms.canUpdate) {
+            alert("You don't have permission to update this project.");
+            return;
+        }
         openUpdateModal(row);
         return;
     }
@@ -1643,6 +1809,11 @@ tableBody.addEventListener("click", async (e) => {
         e.stopPropagation();
         const row = editBtn.closest("tr");
         if (!row) return;
+        const perms = getProjectPermissions(getRowInCharge(row));
+        if (!perms.canEdit) {
+            alert("Only the admin can edit project details.");
+            return;
+        }
         ensurePowForEditing(row);
 
         clearDraft();
@@ -1659,6 +1830,11 @@ tableBody.addEventListener("click", async (e) => {
         e.stopPropagation();
         const row = deleteBtn.closest("tr");
         if (!row) return;
+        const perms = getProjectPermissions(getRowInCharge(row));
+        if (!perms.canDelete) {
+            alert("Only the admin can delete projects.");
+            return;
+        }
         const contractId =
             row.dataset.contractId ||
             row.querySelector("strong")?.innerText?.trim();
@@ -1687,6 +1863,8 @@ tableBody.addEventListener("click", async (e) => {
 
     const row = e.target.closest("tr");
     if (!row) return;
+    const rowPerms = getProjectPermissions(getRowInCharge(row));
+    applyDetailsPermissions(rowPerms.canUpdate);
 
     // Extract values
     const title = row.querySelector("strong")?.innerText || "";
@@ -1838,6 +2016,11 @@ function collectRevisedExpirationDates() {
 }
 
 openVariationOrderBtn?.addEventListener("click", () => {
+    const perms = getProjectPermissions(getRowInCharge(updatingRow));
+    if (!perms.canUpdate) {
+        alert("You don't have permission to update this project.");
+        return;
+    }
     const contractId = updateModal?.dataset.contractId
         || updatingRow?.dataset.contractId
         || updatingRow?.querySelector("strong")?.innerText?.trim()
@@ -2572,6 +2755,10 @@ function swapPowItems(indexA, indexB) {
 function addPowDetailsRowAndFocus() {
     if (!powDetailsBody) return;
     if (!currentDetailsData) return;
+    if (!currentDetailsCanEdit) {
+        alert("You don't have permission to edit this project.");
+        return;
+    }
     const row = document.createElement("tr");
     row.classList.add("pow-editing");
     row.innerHTML = `
@@ -2596,6 +2783,9 @@ function addPowDetailsRowAndFocus() {
 powDetailsBody?.addEventListener("click", (e) => {
     const row = e.target.closest("tr");
     if (!row || !currentDetailsData) return;
+    if (!currentDetailsCanEdit) {
+        return;
+    }
     const index = Number(row.dataset.index || row.getAttribute("data-index"));
     const items = Array.isArray(currentDetailsData.programWorks) ? currentDetailsData.programWorks : [];
 
@@ -2663,12 +2853,17 @@ powDetailsBody?.addEventListener("click", (e) => {
 });
 
 addPowDetailsItemBtn?.addEventListener("click", () => {
+    if (!currentDetailsCanEdit) {
+        alert("You don't have permission to edit this project.");
+        return;
+    }
     addPowDetailsRowAndFocus();
 });
 
 powDetailsBody?.addEventListener("keydown", (e) => {
     const input = e.target;
     if (!(input instanceof HTMLInputElement)) return;
+    if (!currentDetailsCanEdit) return;
     if (e.altKey && (e.key === "ArrowUp" || e.key === "ArrowDown")) {
         const row = input.closest("tr");
         if (!row) return;
@@ -2767,6 +2962,7 @@ function swapVariationItems(voIndex, indexA, indexB) {
 }
 
 powVariationContainer?.addEventListener("click", (e) => {
+    if (!currentDetailsCanEdit) return;
     const deleteVoBtn = e.target.closest(".pow-delete-vo");
     if (deleteVoBtn) {
         const voIndex = Number(deleteVoBtn.dataset.voIndex);
@@ -2858,6 +3054,7 @@ powVariationContainer?.addEventListener("click", (e) => {
 powVariationContainer?.addEventListener("keydown", (e) => {
     const input = e.target;
     if (!(input instanceof HTMLInputElement)) return;
+    if (!currentDetailsCanEdit) return;
     const row = input.closest("tr");
     if (!row) return;
     const index = Number(row.dataset.index || row.getAttribute("data-index"));

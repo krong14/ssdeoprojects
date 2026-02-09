@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login - DPWH SSDEO</title>
+    <link rel="stylesheet" href="auth.css">
+    <link rel="icon" type="image/png" href="assets/dpwh-logo.png">
+  </head>
+  <body data-page="login">
+    <main class="auth-shell">
+      <section class="auth-visual">
+        <div class="brand">
+          <img src="assets/dpwh-logo.png" alt="DPWH logo">
+          <div>
+            <h1>DPWH</h1>
+            <span>Samar 2nd DEO</span>
+          </div>
+        </div>
+        <h2>Secure Project Monitoring</h2>
+        <p>Sign in to manage projects, documents, and geotagged photos.</p>
+        <div class="section-list">
+          <span class="section-badge">Planning</span>
+          <span class="section-badge">Construction</span>
+          <span class="section-badge">Quality Assurance</span>
+          <span class="section-badge">Contractor Side</span>
+        </div>
+        <div class="auth-footer">Access is limited to registered staff.</div>
+      </section>
+
+      <section class="auth-card">
+        <div>
+          <h3>Welcome back</h3>
+          <p>Use your credentials to continue. New accounts require admin approval.</p>
+        </div>
+
+        <div class="form-message" id="formMessage"></div>
+
+        <form class="auth-form" id="loginForm">
+          <div class="form-group">
+            <label for="loginEmail">Email</label>
+            <input id="loginEmail" type="email" placeholder="name@dpwh.gov.ph" required>
+          </div>
+          <div class="form-group">
+            <label for="loginPassword">Password</label>
+            <input id="loginPassword" type="password" placeholder="Enter your password" required>
+          </div>
+          <div class="auth-links">
+            <label>
+              <input type="checkbox" id="rememberMe">
+              Remember me
+            </label>
+            <a href="forgot.html">Forgot password?</a>
+          </div>
+          <div class="form-actions">
+            <button class="btn primary" type="submit">Login</button>
+            <a class="btn secondary" href="signup.html">Create account</a>
+          </div>
+        </form>
+      </section>
+    </main>
+    <script src="auth.js"></script>
+  </body>
+</html>

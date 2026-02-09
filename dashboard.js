@@ -1,4 +1,4 @@
-const body = document.querySelector("body")
+﻿const body = document.querySelector("body")
 const sidebar = body.querySelector(".sidebar")
 const toggle = body.querySelector(".toggle")
 const modeSwitch = body.querySelector(".toggle-switch")
@@ -43,6 +43,46 @@ function getApiBase() {
 
 const apiBase = getApiBase();
 const useRemoteStorage = Boolean(apiBase);
+const SESSION_KEY = "dpwh_current_user";
+
+function getCurrentUser() {
+  if (window.DPWH_CURRENT_USER) return window.DPWH_CURRENT_USER;
+  const raw = localStorage.getItem(SESSION_KEY) || sessionStorage.getItem(SESSION_KEY);
+  if (!raw) return null;
+  try {
+    return JSON.parse(raw);
+  } catch (err) {
+    return null;
+  }
+}
+
+const currentUser = getCurrentUser();
+const currentUserName = String(currentUser?.name || "").trim();
+const isAdminUser = Boolean(currentUser?.isAdmin);
+
+function normalizePersonName(value) {
+  return String(value || "").trim().toLowerCase();
+}
+
+function splitNames(value) {
+  return String(value || "")
+    .split(/[,/;]+/)
+    .map(part => part.trim())
+    .filter(Boolean);
+}
+
+function userMatchesName(value) {
+  if (!currentUserName) return false;
+  const target = normalizePersonName(currentUserName);
+  const candidates = splitNames(value);
+  return candidates.some(name => normalizePersonName(name) === target);
+}
+
+function isUserInCharge(inChargeData) {
+  if (isAdminUser) return true;
+  if (!currentUserName || !inChargeData) return false;
+  return Object.values(inChargeData).some(value => userMatchesName(value));
+}
 
 modeSwitch.addEventListener("click", () => {
   body.classList.toggle("dark");
@@ -279,6 +319,7 @@ async function fetchProjectsForDashboard() {
       };
 
       if (!contractId && !description) return;
+      if (!isAdminUser && !isUserInCharge(inCharge)) return;
       validProjects.push(p);
 
       const tr = document.createElement("tr");

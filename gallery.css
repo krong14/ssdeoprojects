@@ -150,6 +150,14 @@
   gap: 8px;
 }
 
+.album-readonly {
+  font-size: 11px;
+  padding: 4px 8px;
+  border-radius: 999px;
+  border: 1px dashed var(--border-color);
+  color: var(--text-muted);
+}
+
 .album-upload-btn {
   padding: 6px 10px;
   font-size: 12px;

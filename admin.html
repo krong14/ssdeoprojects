@@ -1,11 +1,11 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Gallery</title>
-  <link rel="stylesheet" href="gallery.css">
+  <title>Admin Approval</title>
+  <link rel="stylesheet" href="admin.css">
   <link rel="icon" type="image/png" href="assets/dpwh-logo.png">
   <link href="https://unpkg.com/boxicons@2.1.1/css/boxicons.min.css" rel="stylesheet">
 </head>
@@ -25,7 +25,6 @@
       </div>
 
       <i class='bx bx-chevron-right toggle'></i>
-
     </header>
 
     <div class="menu-bar">
@@ -43,14 +42,13 @@
               <span class="text nav-text">Projects</span>
             </a>
           </li>
-
           <li class="nav-link">
             <a href="documents.html">
               <i class='bx bx-file icon'></i>
               <span class="text nav-text">Documents</span>
             </a>
           </li>
-          <li class="nav-link active">
+          <li class="nav-link">
             <a href="gallery.html">
               <i class='bx bx-image icon'></i>
               <span class="text nav-text">Gallery</span>
@@ -87,78 +85,56 @@
           <div class="toggle-switch">
             <span class="switch"></span>
           </div>
-
         </li>
-
       </div>
     </div>
   </nav>
 
   <section class="home">
     <div class="dashboard-header">
-      <h1>Gallery</h1>
-      <p>Project progress photos and documentation</p>
+      <h1>Access Approval</h1>
+      <p>Approve new users before they can log in.</p>
     </div>
 
-    <div class="gallery-page">
-      <div class="panel gallery-panel">
-        <div class="gallery-toolbar">
-          <div class="gallery-search">
-            <i class='bx bx-search'></i>
-            <input type="search" id="gallerySearch" placeholder="Search contract ID or description">
-          </div>
+    <div class="admin-page">
+      <div class="admin-summary">
+        <div class="admin-card">
+          <span>Total Users</span>
+          <strong id="totalCount">0</strong>
         </div>
+        <div class="admin-card">
+          <span>Pending</span>
+          <strong id="pendingCount">0</strong>
+        </div>
+        <div class="admin-card">
+          <span>Approved</span>
+          <strong id="approvedCount">0</strong>
+        </div>
+        <div class="admin-card">
+          <span>Blocked</span>
+          <strong id="blockedCount">0</strong>
+        </div>
+      </div>
 
-        <div class="panel-title">
-          <i class='bx bx-time'></i>
-          <h3>Recently Uploaded</h3>
-        </div>
-        <div class="gallery-grid" id="recentGrid"></div>
+      <div class="admin-panel">
+        <h3>Pending Requests</h3>
+        <div class="admin-list" id="pendingList"></div>
+      </div>
 
-        <div class="panel-title">
-          <i class='bx bx-image'></i>
-          <h3>Geotagged Photo Albums</h3>
-        </div>
-        <div class="gallery-grid" id="galleryGrid"></div>
+      <div class="admin-panel" style="margin-top:16px">
+        <h3>Approved Users</h3>
+        <div class="admin-list" id="approvedList"></div>
+      </div>
+
+      <div class="admin-panel" style="margin-top:16px">
+        <h3>Blocked Users</h3>
+        <div class="admin-list" id="blockedList"></div>
       </div>
     </div>
   </section>
 
-  
-  <!-- PHOTO PREVIEW MODAL -->
-  <div class="modal-overlay" id="photoPreviewModal">
-    <div class="photo-info-modal">
-      <button class="modal-close" id="closePhotoPreview"><i class='bx bx-x'></i></button>
-      <div class="photo-info-left">
-        <img id="photoPreviewImage" src="" alt="Photo preview">
-        <div class="photo-preview-footer">
-          <button class="btn secondary" id="prevPhotoBtn"><i class='bx bx-chevron-left'></i> Prev</button>
-          <button class="btn secondary" id="nextPhotoBtn">Next <i class='bx bx-chevron-right'></i></button>
-        </div>
-      </div>
-      <div class="photo-info-right">
-        <h3>Photo Information</h3>
-        <div class="photo-info-row"><strong>ID</strong><span id="photoInfoId">—</span></div>
-        <div class="photo-info-row"><strong>Purpose</strong><span id="photoInfoPurpose">Geotagged Photo</span></div>
-        <div class="photo-info-row"><strong>Date Captured</strong><span id="photoInfoDate">—</span></div>
-        <div class="photo-info-row"><strong>Location</strong><span id="photoInfoLocation">—</span></div>
-        <div style="margin-top:18px">
-          <a id="photoInfoDownload" class="btn primary" href="#" download>Download Photo</a>
-        </div>
-      </div>
-    </div>
-  </div>
   <script src="auth-guard.js"></script>
-  <script src="config.js"></script>
-  <script src="gallery.js"></script>
+  <script src="admin.js"></script>
 </body>
 
 </html>
-
-
-
-
-
-
-
-

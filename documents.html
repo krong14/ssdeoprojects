@@ -62,11 +62,17 @@
               <span class="text nav-text">Engineers</span>
             </a>
           </li>
+          <li class="nav-link admin-only" data-admin-only>
+            <a href="admin.html">
+              <i class='bx bx-shield icon'></i>
+              <span class="text nav-text">Admin</span>
+            </a>
+          </li>
         </ul>
       </div>
       <div class="bottom-content">
         <li class="">
-          <a href="#">
+          <a href="index.html" data-logout="true">
             <i class='bx bx-log-out icon'></i>
             <span class="text nav-text">Logout</span>
           </a>
@@ -181,6 +187,7 @@
     </div>
   </div>
 
+  <script src="auth-guard.js"></script>
   <script src="config.js"></script>
   <script src="documents.js"></script>
 </body>
