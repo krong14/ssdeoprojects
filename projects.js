@@ -1,4 +1,4 @@
-﻿const body = document.querySelector("body")
+const body = document.querySelector("body")
 const sidebar = body.querySelector(".sidebar")
 const toggle = body.querySelector(".toggle")
 const modeSwitch = body.querySelector(".toggle-switch")
@@ -2140,14 +2140,7 @@ function renderGallery(contractId) {
             imgWrap.appendChild(img);
             imgWrap.appendChild(overlay);
 
-            imgWrap.addEventListener('click', () => openPhotoModal({
-                id: `${key}-photo-${index + 1}`,
-                src: item.dataUrl || "",
-                purpose: 'Geotagged Photo',
-                date: item.date ? new Date(item.date).toLocaleDateString("en-PH") : "",
-                location: key,
-                name: item.name || `${key}-photo-${index + 1}.jpg`
-            }));
+            imgWrap.addEventListener('click', () => openPhotoModalAt(index, items, key));
             photos.appendChild(imgWrap);
         });
     };
@@ -2174,39 +2167,77 @@ function renderGallery(contractId) {
     renderItems(items);
 }
 
-// Open photo modal with photo metadata
-function openPhotoModal(photo) {
-    const photoModal = document.getElementById('photoModal');
+let currentGalleryItems = [];
+let currentGalleryIndex = 0;
+let currentGalleryContract = "";
+
+function updatePhotoModal() {
+    if (!currentGalleryItems.length) return;
+    const item = currentGalleryItems[currentGalleryIndex] || {};
     const photoModalImage = document.getElementById('photoModalImage');
+    const photoId = document.getElementById('photoId');
     const photoPurpose = document.getElementById('photoPurpose');
     const photoDate = document.getElementById('photoDate');
     const photoLocation = document.getElementById('photoLocation');
     const photoDownloadBtn = document.getElementById('photoDownloadBtn');
 
-    if (photoModalImage) photoModalImage.src = photo.src || "";
-    if (photoPurpose) photoPurpose.textContent = photo.purpose || '—';
-    if (photoDate) photoDate.textContent = photo.date || '—';
-    if (photoLocation) photoLocation.textContent = photo.location || '—';
+    const src = item.dataUrl || item.url || "";
+    const name = item.name || item.fileName || "";
+    const dateValue = item.date || item.updatedAt || "";
+    const dateObj = dateValue ? new Date(dateValue) : null;
+    const dateText = dateObj && !Number.isNaN(dateObj.getTime())
+        ? dateObj.toLocaleDateString("en-PH")
+        : "—";
+
+    if (photoModalImage) photoModalImage.src = src || "";
+    if (photoId) photoId.textContent = `${currentGalleryContract}-photo-${currentGalleryIndex + 1}`;
+    if (photoPurpose) photoPurpose.textContent = "Geotagged Photo";
+    if (photoDate) photoDate.textContent = dateText;
+    if (photoLocation) photoLocation.textContent = currentGalleryContract || "—";
 
     if (photoDownloadBtn) {
-        photoDownloadBtn.href = photo.src || "#";
-        photoDownloadBtn.setAttribute('download', photo.name || `${photo.id || "photo"}.jpg`);
+        const fallbackName = `${currentGalleryContract}-photo-${currentGalleryIndex + 1}.jpg`;
+        photoDownloadBtn.href = src || "#";
+        photoDownloadBtn.setAttribute('download', name || fallbackName);
     }
+}
 
+function showGalleryPhoto(index) {
+    if (!currentGalleryItems.length) return;
+    const total = currentGalleryItems.length;
+    currentGalleryIndex = (index + total) % total;
+    updatePhotoModal();
+}
+
+function openPhotoModalAt(index, items, contractKey) {
+    currentGalleryItems = Array.isArray(items) ? items : [];
+    currentGalleryContract = String(contractKey || "").trim().toUpperCase();
+    if (!currentGalleryItems.length) return;
+    const total = currentGalleryItems.length;
+    currentGalleryIndex = Math.max(0, Math.min(index, total - 1));
+    updatePhotoModal();
+    const photoModal = document.getElementById('photoModal');
     photoModal?.classList.add('open');
 }
 // Close photo modal
 function closePhotoModal() {
     const photoModal = document.getElementById('photoModal');
     if (photoModal) photoModal.classList.remove('open');
+    currentGalleryItems = [];
+    currentGalleryIndex = 0;
+    currentGalleryContract = "";
 }
 
 // Wire close button and overlay background click (after DOM is ready)
 document.addEventListener('DOMContentLoaded', () => {
     const closePhotoModalBtn = document.getElementById('closePhotoModal');
     const photoModalEl = document.getElementById('photoModal');
+    const prevPhotoBtn = document.getElementById('photoPrevBtn');
+    const nextPhotoBtn = document.getElementById('photoNextBtn');
 
     closePhotoModalBtn?.addEventListener('click', closePhotoModal);
+    prevPhotoBtn?.addEventListener('click', () => showGalleryPhoto(currentGalleryIndex - 1));
+    nextPhotoBtn?.addEventListener('click', () => showGalleryPhoto(currentGalleryIndex + 1));
 
     photoModalEl?.addEventListener('click', (e) => {
         if (e.target === photoModalEl) {
@@ -2215,9 +2246,10 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     document.addEventListener('keydown', (e) => {
-        if (e.key === 'Escape' && photoModalEl?.classList.contains('open')) {
-            closePhotoModal();
-        }
+        if (!photoModalEl?.classList.contains('open')) return;
+        if (e.key === 'Escape') closePhotoModal();
+        if (e.key === 'ArrowLeft') showGalleryPhoto(currentGalleryIndex - 1);
+        if (e.key === 'ArrowRight') showGalleryPhoto(currentGalleryIndex + 1);
     });
 });
 
