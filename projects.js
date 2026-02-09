@@ -52,8 +52,8 @@ function normalizeEngineerRole(role) {
     const lower = value.toLowerCase();
     if (lower === "project engineer" || lower === "project engineers") return "Project Engineer";
     if (lower === "materials engineer" || lower === "materials engineers") return "Materials Engineer";
-    if (lower === "provisional engineer" || lower === "provisional engineers") return "Provisional Engineer";
-    if (lower === "project inspector" || lower === "project inspectors") return "Provisional Engineer";
+    if (lower === "provisional engineer" || lower === "provisional engineers") return "Project Inspector";
+    if (lower === "project inspector" || lower === "project inspectors") return "Project Inspector";
     if (lower === "resident engineer" || lower === "resident engineers") return "Resident Engineer";
     if (lower === "qa in-charge" || lower === "qa in charge" || lower === "qa in-charges") return "QA In-Charge";
     if (lower === "contractor materials engineer" || lower === "contractors materials engineer") return "Contractor Materials Engineer";
@@ -106,7 +106,7 @@ function populateEngineerDatalists() {
     const lists = {
         projectEngineerList: [],
         materialsEngineerList: [],
-        provisionalEngineerList: [],
+        projectInspectorList: [],
         residentEngineerList: [],
         qaInChargeList: [],
         contractorMaterialsEngineerList: []
@@ -119,8 +119,8 @@ function populateEngineerDatalists() {
             case "Materials Engineer":
                 lists.materialsEngineerList.push(name);
                 break;
-            case "Provisional Engineer":
-                lists.provisionalEngineerList.push(name);
+            case "Project Inspector":
+                lists.projectInspectorList.push(name);
                 break;
             case "Resident Engineer":
                 lists.residentEngineerList.push(name);
@@ -139,7 +139,7 @@ function populateEngineerDatalists() {
 
     populateDatalist("projectEngineerList", lists.projectEngineerList);
     populateDatalist("materialsEngineerList", lists.materialsEngineerList);
-    populateDatalist("provisionalEngineerList", lists.provisionalEngineerList);
+    populateDatalist("projectInspectorList", lists.projectInspectorList);
     populateDatalist("residentEngineerList", lists.residentEngineerList);
     populateDatalist("qaInChargeList", lists.qaInChargeList);
     populateDatalist("contractorMaterialsEngineerList", lists.contractorMaterialsEngineerList);
