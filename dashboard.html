@@ -4,10 +4,12 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Engineers</title>
-  <link rel="stylesheet" href="engineers.css">
+  <title>Dashboard</title>
+  <link rel="stylesheet" href='dashboard.css'>
   <link rel="icon" type="image/png" href="assets/dpwh-logo.png">
-  <link href="https://unpkg.com/boxicons@2.1.1/css/boxicons.min.css" rel="stylesheet">
+  <link href='https://unpkg.com/boxicons@2.1.1/css/boxicons.min.css' rel="stylesheet">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 </head>
 
 <body>
@@ -25,12 +27,13 @@
       </div>
 
       <i class='bx bx-chevron-right toggle'></i>
+
     </header>
 
     <div class="menu-bar">
       <div class="menu">
         <ul class="menu-links">
-          <li class="nav-link">
+          <li class="nav-link active">
             <a href="dashboard.html">
               <i class='bx bx-home-alt icon'></i>
               <span class="text nav-text">Dashboard</span>
@@ -42,6 +45,7 @@
               <span class="text nav-text">Projects</span>
             </a>
           </li>
+
           <li class="nav-link">
             <a href="documents.html">
               <i class='bx bx-file icon'></i>
@@ -54,7 +58,7 @@
               <span class="text nav-text">Gallery</span>
             </a>
           </li>
-          <li class="nav-link active">
+          <li class="nav-link">
             <a href="engineers.html">
               <i class='bx bx-user icon'></i>
               <span class="text nav-text">Engineers</span>
@@ -86,79 +90,562 @@
     </div>
   </nav>
 
-  <section class="engineers">
-    <div class="dashboard-header engineers-header">
-      <div>
-        <h1>Engineers</h1>
-        <p>Directory used for project assignments</p>
+  <section class="home">
+
+    <!-- PAGE HEADER -->
+    <div class="dashboard-header">
+      <h1>Dashboard</h1>
+      <p>DPWH Samar 2nd District Engineering Office</p>
+    </div>
+
+    <!-- SUMMARY CARDS -->
+    <div class="card-grid">
+
+      <div class="card" data-status-filter="all">
+        <div class="card-icon blue">
+          <i class='bx bx-layer'></i>
+        </div>
+        <div class="card-info">
+          <span class="card-title">Total Projects</span>
+          <span class="card-value" id="totalProjectsCount">0</span>
+        </div>
+      </div>
+
+      <div class="card" data-status-filter="on-going">
+        <div class="card-icon orange">
+          <i class='bx bx-time-five'></i>
+        </div>
+        <div class="card-info">
+          <span class="card-title">On-Going</span>
+          <span class="card-value" id="ongoingProjectsCount">0</span>
+        </div>
+      </div>
+
+      <div class="card" data-status-filter="suspended">
+        <div class="card-icon purple">
+          <i class='bx bx-pause-circle'></i>
+        </div>
+        <div class="card-info">
+          <span class="card-title">Suspended</span>
+          <span class="card-value" id="suspendedProjectsCount">0</span>
+        </div>
+      </div>
+
+      <div class="card" data-status-filter="completed">
+        <div class="card-icon green">
+          <i class='bx bx-check-circle'></i>
+        </div>
+        <div class="card-info">
+          <span class="card-title">Completed</span>
+          <span class="card-value" id="completedProjectsCount">0</span>
+        </div>
+      </div>
+
+      <div class="card" data-status-filter="expired">
+        <div class="card-icon red">
+          <i class='bx bx-error-circle'></i>
+        </div>
+        <div class="card-info">
+          <span class="card-title">Expired</span>
+          <span class="card-value" id="expiredProjectsCount">0</span>
+        </div>
+      </div>
+
+    </div>
+    <!------------------------------------------------------------------------------------------------->
+    <!-- DOCUMENTS MONITORING -->
+    <div class="documents-monitoring">
+      <div class="documents-header">
+        <h2>Project Monitoring Docs</h2>
+        <p>Quick view of documents by section</p>
+      </div>
+
+      <div class="documents-body">
+        <div class="documents-stats">
+          <div class="doc-item total" data-tone="blue" data-doc-section="contracts">
+            <div class="doc-meta">
+              <span class="doc-dot blue"></span>
+              <span class="doc-label">Total Documents</span>
+            </div>
+            <div class="doc-progress">
+              <span class="doc-ring" style="--progress: 0;" aria-hidden="true">
+                <span class="doc-ring-text">0%</span>
+              </span>
+              <div class="doc-value">
+                <span class="doc-number">0</span>
+                <span class="doc-percent">0%</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="doc-item" data-tone="teal" data-doc-section="planning">
+            <div class="doc-meta">
+              <span class="doc-dot teal"></span>
+              <span class="doc-label">Planning and Design Section Documents</span>
+            </div>
+            <div class="doc-progress">
+              <span class="doc-ring" style="--progress: 0;" aria-hidden="true">
+                <span class="doc-ring-text">0%</span>
+              </span>
+              <div class="doc-value">
+                <span class="doc-number">0</span>
+                <span class="doc-percent">0%</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="doc-item" data-tone="orange" data-doc-section="construction">
+            <div class="doc-meta">
+              <span class="doc-dot orange"></span>
+              <span class="doc-label">Construction Section Documents</span>
+            </div>
+            <div class="doc-progress">
+              <span class="doc-ring" style="--progress: 0;" aria-hidden="true">
+                <span class="doc-ring-text">0%</span>
+              </span>
+              <div class="doc-value">
+                <span class="doc-number">0</span>
+                <span class="doc-percent">0%</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="doc-item" data-tone="green" data-doc-section="qa">
+            <div class="doc-meta">
+              <span class="doc-dot green"></span>
+              <span class="doc-label">Quality Assurance Section Documents</span>
+            </div>
+            <div class="doc-progress">
+              <span class="doc-ring" style="--progress: 0;" aria-hidden="true">
+                <span class="doc-ring-text">0%</span>
+              </span>
+              <div class="doc-value">
+                <span class="doc-number">0</span>
+                <span class="doc-percent">0%</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="doc-item" data-tone="purple" data-doc-section="contractor">
+            <div class="doc-meta">
+              <span class="doc-dot purple"></span>
+              <span class="doc-label">Contractors Documents</span>
+            </div>
+            <div class="doc-progress">
+              <span class="doc-ring" style="--progress: 0;" aria-hidden="true">
+                <span class="doc-ring-text">0%</span>
+              </span>
+              <div class="doc-value">
+                <span class="doc-number">0</span>
+                <span class="doc-percent">0%</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <!------------------------------------------------------------------------------------------------->
+    <!-- FILTER BAR-->
+    <div class="project-filter-bar">
+
+      <!-- ROW 1: SEARCH -->
+      <div class="filter-row">
+        <div class="filter-search">
+          <i class='bx bx-search'></i>
+          <input type="text" placeholder="Search contract, location, contractor, year">
+        </div>
+      </div>
+
+      <!-- ROW 2: FILTER PILLS -->
+      <div class="filter-row pills-row">
+        <!-- CATEGORY -->
+        <div class="filter-pill category-pill dropdown-pill" id="categoryPill">
+          <div class="pill-header">
+            <i class='bx bx-filter'></i>
+            <span id="categoryLabel">All Categories</span>
+            <i class='bx bx-chevron-down'></i>
+          </div>
+
+          <div class="category-dropdown">
+            <div class="cat-option active">
+              <i class='bx bx-filter'></i> All Categories
+            </div>
+            <div class="cat-option">
+              <i class='bx bx-git-merge'></i> Bridges
+            </div>
+            <div class="cat-option">
+              <i class='bx bx-building'></i> Buildings and Facilities
+            </div>
+            <div class="cat-option">
+              <i class='bx bx-water'></i> Flood Control and Drainage
+            </div>
+            <div class="cat-option">
+              <i class='bx bx-transfer'></i> Roads
+            </div>
+            <div class="cat-option">
+              <i class='bx bx-droplet'></i> Septage and Sewerage Plants
+            </div>
+          </div>
+        </div>
+        <!-- YEAR -->
+        <div class="filter-pill year-pill dropdown-pill" id="yearPill">
+          <div class="pill-header">
+            <i class='bx bx-calendar'></i>
+            <span id="yearLabel">All Years</span>
+            <i class='bx bx-chevron-down'></i>
+          </div>
+
+          <div class="year-dropdown">
+            <div class="year-option active">
+              <i class='bx bx-calendar'></i> All Years
+            </div>
+            <div class="year-option">2026</div>
+            <div class="year-option">2025</div>
+            <div class="year-option">2024</div>
+            <div class="year-option">2023</div>
+          </div>
+        </div>
+        <!-- PROJECT ENGINEER -->
+        <div class="filter-pill engineer-pill dropdown-pill" id="engineerPill">
+          <div class="pill-header">
+            <i class='bx bx-user'></i>
+            <span id="engineerLabel">Project Engineer</span>
+            <i class='bx bx-chevron-down'></i>
+          </div>
+
+          <div class="engineer-dropdown">
+            <div class="engineer-option active">All Engineers</div>
+            <div class="engineer-option">UNKNOWN</div>
+            <div class="engineer-option">AMMON M. QUITALIG</div>
+            <div class="engineer-option">EMMANUEL G. JUMAGDAO</div>
+            <div class="engineer-option">RAQUEL O. LAURETA</div>
+            <div class="engineer-option">EMELYN M. SAY</div>
+            <div class="engineer-option">JERICO I. CABANGUNAY</div>
+            <div class="engineer-option">PEDRO LINDSEY R. LOYOLA, VI</div>
+            <div class="engineer-option">LIEZEL R. AFABLE</div>
+            <div class="engineer-option">LOLIBETH S. JUMAGDAO</div>
+            <div class="engineer-option">SANDRA ROSE L. QUITALIG</div>
+          </div>
+        </div>
+
+        <!-- MATERIALS ENGINEER -->
+        <div class="filter-pill materials-pill dropdown-pill" id="materialsPill">
+          <div class="pill-header">
+            <i class='bx bx-test-tube'></i>
+            <span id="materialsLabel">Materials Engineer</span>
+            <i class='bx bx-chevron-down'></i>
+          </div>
+
+          <div class="materials-dropdown">
+            <div class="materials-option active">All Materials Engineers</div>
+            <div class="materials-option">UNKNOWN</div>
+            <div class="materials-option">ALVIN C. FABON</div>
+            <div class="materials-option">ALAN P. PANCITO JR.</div>
+          </div>
+        </div>
+
+        <!-- CONTRACTOR -->
+        <div class="filter-pill contractor-pill dropdown-pill" id="contractorPill">
+          <div class="pill-header">
+            <i class='bx bx-buildings'></i>
+            <span id="contractorLabel">Contractor</span>
+            <i class='bx bx-chevron-down'></i>
+          </div>
+
+          <div class="contractor-dropdown">
+
+            <div class="contractor-option active">All Contractors</div>
+
+            <div class="contractor-option">JUPA CONSTRUCTION</div>
+            <div class="contractor-option">BCG BUILDERS</div>
+            <div class="contractor-option">TOM BUILDERS &amp; SUPPLY</div>
+            <div class="contractor-option">G. BUILDERS</div>
+            <div class="contractor-option">BENCH CONSTRUCTION &amp; SUPPLY</div>
+            <div class="contractor-option">PABLO S. LABASBAS CONST. CORP.</div>
+            <div class="contractor-option">AQUALINE CONST./R.B ASPHALT PLANT CONST. INC.</div>
+            <div class="contractor-option">MDBD CONST.</div>
+            <div class="contractor-option">LRD CONST.</div>
+            <div class="contractor-option">EBS CONST. AND SUPPLY</div>
+            <div class="contractor-option">ALF CONSTRUCTION</div>
+            <div class="contractor-option">B. VICENCIO BLDRS INC./ALPHAHAWK CONST. CORP.</div>
+            <div class="contractor-option">CNE CONST./QCC CONST. &amp; SUPPLY (J.V.)</div>
+            <div class="contractor-option">BRYNE CONSTRUCTION AND SUPPLY</div>
+            <div class="contractor-option">B. VICENCIO BLDRS (BVB) INC.</div>
+            <div class="contractor-option">BCG DESIGN AND CONSTRUCTION</div>
+            <div class="contractor-option">EZ JONES CONSTRUCTION INC.</div>
+
+          </div>
+        </div>
+
+        <!-- VIEW -->
+        <div class="filter-view">
+          <button class="active" title="List View">
+            <i class='bx bx-list-ul'></i>
+          </button>
+          <button title="Map View">
+            <i class='bx bx-map-alt'></i>
+          </button>
+        </div>
+      </div>
+    </div>
+    <!------------------------------------------------------------------------------------------------->
+    <div class="contracts-header">
+      <div class="contracts-count">
+        <i class='bx bx-folder'></i>
+        <span id="contractsCount">0 Contracts Found</span>
+      </div>
+    </div>
+    <!------------------------------------------------------------------------------------------------->
+    <div class="contracts-table-wrapper">
+      <table class="contracts-table">
+        <thead>
+          <tr>
+            <th>Contract Description</th>
+            <th>Contractor</th>
+            <th>Cost</th>
+            <th>Accomplishment</th>
+            <th>Status</th>
+            <th>Completion Date</th>
+            <th>Report</th>
+          </tr>
+        </thead>
+
+        <tbody id="contractsTableBody"></tbody>
+      </table>
+    </div>
+
+
+
+
+
+
+    <!-- PROJECT DETAILS MODAL (SAME AS PROJECTS PAGE) -->
+    <div class="modal-overlay" id="projectDetailsModal">
+      <div class="modal modal-lg">
+
+        <!-- HEADER -->
+        <div class="modal-header orange">
+          <h3>Contract Details</h3>
+          <button class="modal-close" id="closeDetailsModal" type="button">
+            <i class="bx bx-x"></i>
+          </button>
+        </div>
+
+        <!-- BODY -->
+        <div class="modal-body">
+
+          <!-- TITLE + COST -->
+          <div class="details-top">
+            <div>
+              <h2 id="detailsTitle"></h2>
+              <div class="details-tags">
+                <span class="tag success" id="detailsStatus">Completed</span>
+                <span class="tag warning" id="detailsCategory">Roads</span>
+              </div>
+            </div>
+
+            <div class="details-cost">
+              <small>Contract Cost</small>
+              <div id="detailsCost"></div>
+              <button class="btn secondary details-download" id="downloadContractInfoDash" type="button">
+                <i class='bx bx-download'></i>
+                Download Project Info
+              </button>
+            </div>
+          </div>
+
+          <!-- TABS -->
+          <div class="details-tabs">
+            <button class="tab-btn active" data-tab="contract">Contract Information</button>
+            <button class="tab-btn" data-tab="location">Location Data</button>
+            <button class="tab-btn" data-tab="in-charge">Project In-Charge</button>
+            <button class="tab-btn" data-tab="gallery">Gallery</button>
+            <button class="tab-btn" data-tab="documents">Documents</button>
+            <button class="tab-btn" data-tab="pow">Program of Works</button>
+          </div>
+
+          <!-- CONTENT -->
+          <div class="modal-tabs">
+            <div class="tab-content active" id="tab-contract">
+
+              <div class="info-block">
+                <label>Contract Description</label>
+                <p id="detailsDescription"></p>
+              </div>
+
+              <div class="info-block">
+                <label>Contractor</label>
+                <p id="detailsContractor"></p>
+              </div>
+
+              <div class="info-grid">
+                <div class="info-block">
+                  <label>Start Date</label>
+                  <p id="detailsStart"></p>
+                </div>
+
+                <div class="info-block">
+                  <label>Expiration Date</label>
+                  <p id="detailsExpiration"></p>
+                </div>
+
+                <div class="info-block">
+                  <label>Completion Date</label>
+                  <p id="detailsCompletion"></p>
+                </div>
+              </div>
+
+            </div>
+
+            <!-- LOCATION DATA TAB -->
+            <div class="tab-content" id="tab-location">
+              <div class="info-box">
+                <label>Location</label>
+                <div class="info-value" id="detailsLocation">-</div>
+              </div>
+
+              <div class="info-box coordinates-box">
+                <div>
+                  <label>Coordinates</label>
+                  <div class="info-value" id="detailsCoordinates">-</div>
+                </div>
+                <button class="btn secondary map-direction" id="getDirectionsBtn" type="button">
+                  <i class='bx bx-navigation'></i>
+                  Get Direction
+                </button>
+              </div>
+
+              <div class="map-header">
+                <h4><i class='bx bx-map'></i> Map View</h4>
+
+                <div class="map-toggle">
+                  <button class="active" id="streetBtn">
+                    <i class='bx bx-map-alt'></i> Street
+                  </button>
+                  <button id="satelliteBtn">
+                    <i class='bx bx-world'></i> Satellite
+                  </button>
+                </div>
+              </div>
+
+              <div id="projectMap"></div>
+
+            </div>
+            <div class="tab-content" id="tab-in-charge">
+
+              <div class="info-block">
+                <label>Project Engineer</label>
+                <div class="engineer-detail" id="detailsProjectEngineer"></div>
+              </div>
+
+              <div class="info-block">
+                <label>Materials Engineer</label>
+                <div class="engineer-detail" id="detailsMaterialsEngineer"></div>
+              </div>
+
+              <div class="info-block">
+                <label>Project Inspector</label>
+                <div class="engineer-detail" id="detailsProjectInspector"></div>
+              </div>
+
+              <div class="info-block">
+                <label>Resident Engineer</label>
+                <div class="engineer-detail" id="detailsResidentEngineer"></div>
+              </div>
+
+              <div class="info-block">
+                <label>QA In-Charge</label>
+                <div class="engineer-detail" id="detailsQaInCharge"></div>
+              </div>
+
+              <div class="info-block">
+                <label>Contractor’s Materials Engineer</label>
+                <div class="engineer-detail" id="detailsContractorMaterialsEngineer"></div>
+              </div>
+
+            </div>
+
+            <!-- GALLERY TAB -->
+            <div class="tab-content" id="tab-gallery">
+              <h4 class="section-title">
+                <i class='bx bx-image'></i> Project Gallery
+              </h4>
+
+              <div id="galleryContainer"></div>
+            </div>
+
+            <!-- DOCUMENTS TAB -->
+            <div class="tab-content" id="tab-documents">
+              <h4 class="section-title">
+                <i class='bx bx-file'></i> Table of Contents
+              </h4>
+
+              <div class="documents-list" id="documentsContainer"></div>
+            </div>
+
+            <!-- PROGRAM OF WORKS TAB -->
+            <div class="tab-content" id="tab-pow">
+              <div class="pow-header">
+                <div class="pow-title">
+                  <i class='bx bx-list-check'></i> Program of Works
+                </div>
+              </div>
+              <div class="pow-subheader">Original</div>
+              <div class="pow-table-wrapper">
+                <table class="pow-table pow-table-readonly">
+                  <thead>
+                    <tr>
+                      <th>Item No.</th>
+                      <th>Description</th>
+                      <th>Quantity</th>
+                      <th>Unit</th>
+                    </tr>
+                  </thead>
+                  <tbody id="powDetailsBodyDash"></tbody>
+                </table>
+              </div>
+              <div class="pow-variation-container" id="powVariationContainerDash"></div>
+            </div>
+
+          </div>
+        </div>
+
       </div>
     </div>
 
-    <div class="engineers-grid">
-      <div class="panel form-panel">
-        <div class="panel-title">
-          <i class='bx bx-user-plus'></i>
-          <h3>Add Engineer</h3>
-        </div>
-        <p class="panel-subtitle">Add names here so they appear in the Add Project dropdowns.</p>
-
-        <div class="form-group">
-          <label for="engineerName">Engineer Name</label>
-          <input id="engineerName" type="text" placeholder="e.g. Juan Dela Cruz">
-        </div>
-
-        <div class="form-group">
-          <label for="engineerRole">Role</label>
-          <select id="engineerRole">
-            <option value="">Select Role</option>
-            <option value="Project Engineer">Project Engineer</option>
-            <option value="Materials Engineer">Materials Engineer</option>
-            <option value="Project Inspector">Project Inspector</option>
-            <option value="Resident Engineer">Resident Engineer</option>
-            <option value="QA In-Charge">QA In-Charge</option>
-            <option value="Contractor Materials Engineer">Contractor Materials Engineer</option>
-          </select>
-        </div>
-
-        <div class="form-group">
-          <label for="engineerAccreditation">Accreditation Number</label>
-          <input id="engineerAccreditation" type="text" placeholder="e.g. #1234567">
-        </div>
-
-        <div class="form-group">
-          <label for="engineerPhone">Phone Number</label>
-          <input id="engineerPhone" type="text" placeholder="e.g. 0917 123 4567">
-        </div>
-
-        <div class="form-group">
-          <label for="engineerFacebook">Facebook</label>
-          <input id="engineerFacebook" type="text" placeholder="e.g. fb.com/juan.delacruz">
-        </div>
-
-
-
-        <button class="btn primary" id="addEngineerBtn" type="button">
-          <i class='bx bx-plus'></i>
-          Add Engineer
-        </button>
-      </div>
-
-      <div class="panel list-panel">
-        <div class="panel-title">
-          <i class='bx bx-group'></i>
-          <h3>Engineer List</h3>
-        </div>
-        <p class="panel-subtitle">
-          <span id="engineerCount">0 Engineers</span>
-        </p>
-
-        <div class="engineer-list" id="engineerList"></div>
-      </div>
-    </div>
   </section>
 
-  <script src="config.js"></script>
-  <script src="engineers.js"></script>
-</body>
 
+  <script src="config.js"></script>
+  <script src="dashboard.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+
+  <!-- PHOTO DETAILS MODAL -->
+  <div class="modal-overlay" id="photoModal">
+    <div class="photo-modal">
+      <div class="photo-modal-left">
+        <button class="modal-close photo-modal-close" id="closePhotoModal">&times;</button>
+        <button class="photo-nav-btn prev" id="photoPrevBtn" type="button">
+          <i class='bx bx-chevron-left'></i>
+        </button>
+        <button class="photo-nav-btn next" id="photoNextBtn" type="button">
+          <i class='bx bx-chevron-right'></i>
+        </button>
+        <img id="photoModalImage" src="" alt="Photo details">
+      </div>
+      <div class="photo-modal-right">
+        <h3>Photo Information</h3>
+        <div class="photo-info-row"><strong>ID</strong><span id="photoId">—</span></div>
+        <div class="photo-info-row"><strong>Purpose</strong><span id="photoPurpose">—</span></div>
+        <div class="photo-info-row"><strong>Date Captured</strong><span id="photoDate">—</span></div>
+        <div class="photo-info-row"><strong>Location</strong><span id="photoLocation">—</span></div>
+
+        <div style="margin-top:18px">
+          <a id="photoDownloadBtn" class="btn primary" href="#" download>Download Photo</a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</body>
 </html>
