@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Engineers</title>
+  <link rel="stylesheet" href="engineers.css">
+  <link rel="icon" type="image/png" href="assets/dpwh-logo.png">
+  <link href="https://unpkg.com/boxicons@2.1.1/css/boxicons.min.css" rel="stylesheet">
+</head>
+
+<body>
+  <nav class="sidebar close">
+    <header>
+      <div class="image-text">
+        <span class="image">
+          <img src="assets/dpwh-logo.png" alt="logo">
+        </span>
+
+        <div class="text header-text">
+          <span class="name">DPWH</span>
+          <span class="profession">Samar 2nd DEO </span>
+        </div>
+      </div>
+
+      <i class='bx bx-chevron-right toggle'></i>
+    </header>
+
+    <div class="menu-bar">
+      <div class="menu">
+        <ul class="menu-links">
+          <li class="nav-link">
+            <a href="dashboard.html">
+              <i class='bx bx-home-alt icon'></i>
+              <span class="text nav-text">Dashboard</span>
+            </a>
+          </li>
+          <li class="nav-link">
+            <a href="projects.html">
+              <i class='bx bx-briefcase-alt-2 icon'></i>
+              <span class="text nav-text">Projects</span>
+            </a>
+          </li>
+          <li class="nav-link">
+            <a href="documents.html">
+              <i class='bx bx-file icon'></i>
+              <span class="text nav-text">Documents</span>
+            </a>
+          </li>
+          <li class="nav-link">
+            <a href="gallery.html">
+              <i class='bx bx-image icon'></i>
+              <span class="text nav-text">Gallery</span>
+            </a>
+          </li>
+          <li class="nav-link active">
+            <a href="engineers.html">
+              <i class='bx bx-user icon'></i>
+              <span class="text nav-text">Engineers</span>
+            </a>
+          </li>
+        </ul>
+      </div>
+      <div class="bottom-content">
+        <li class="">
+          <a href="#">
+            <i class='bx bx-log-out icon'></i>
+            <span class="text nav-text">Logout</span>
+          </a>
+        </li>
+        <li class="mode">
+          <div class="moon-sun">
+            <i class='bx bx-moon icon moon'></i>
+            <i class='bx bx-sun icon sun'></i>
+          </div>
+          <span class="mode-text text">Dark Mode</span>
+
+          <div class="toggle-switch">
+            <span class="switch"></span>
+          </div>
+
+        </li>
+
+      </div>
+    </div>
+  </nav>
+
+  <section class="engineers">
+    <div class="dashboard-header engineers-header">
+      <div>
+        <h1>Engineers</h1>
+        <p>Directory used for project assignments</p>
+      </div>
+    </div>
+
+    <div class="engineers-grid">
+      <div class="panel form-panel">
+        <div class="panel-title">
+          <i class='bx bx-user-plus'></i>
+          <h3>Add Engineer</h3>
+        </div>
+        <p class="panel-subtitle">Add names here so they appear in the Add Project dropdowns.</p>
+
+        <div class="form-group">
+          <label for="engineerName">Engineer Name</label>
+          <input id="engineerName" type="text" placeholder="e.g. Juan Dela Cruz">
+        </div>
+
+        <div class="form-group">
+          <label for="engineerRole">Role</label>
+          <select id="engineerRole">
+            <option value="">Select Role</option>
+            <option value="Project Engineer">Project Engineer</option>
+            <option value="Materials Engineer">Materials Engineer</option>
+            <option value="Provisional Engineer">Provisional Engineer</option>
+            <option value="Resident Engineer">Resident Engineer</option>
+            <option value="QA In-Charge">QA In-Charge</option>
+            <option value="Contractor Materials Engineer">Contractor Materials Engineer</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label for="engineerAccreditation">Accreditation Number</label>
+          <input id="engineerAccreditation" type="text" placeholder="e.g. #1234567">
+        </div>
+
+        <div class="form-group">
+          <label for="engineerPhone">Phone Number</label>
+          <input id="engineerPhone" type="text" placeholder="e.g. 0917 123 4567">
+        </div>
+
+        <div class="form-group">
+          <label for="engineerFacebook">Facebook</label>
+          <input id="engineerFacebook" type="text" placeholder="e.g. fb.com/juan.delacruz">
+        </div>
+
+
+
+        <button class="btn primary" id="addEngineerBtn" type="button">
+          <i class='bx bx-plus'></i>
+          Add Engineer
+        </button>
+      </div>
+
+      <div class="panel list-panel">
+        <div class="panel-title">
+          <i class='bx bx-group'></i>
+          <h3>Engineer List</h3>
+        </div>
+        <p class="panel-subtitle">
+          <span id="engineerCount">0 Engineers</span>
+        </p>
+
+        <div class="engineer-list" id="engineerList"></div>
+      </div>
+    </div>
+  </section>
+
+  <script src="config.js"></script>
+  <script src="engineers.js"></script>
+</body>
+
+</html>

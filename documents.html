@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Documents</title>
+  <link rel="stylesheet" href="documents.css">
+  <link rel="icon" type="image/png" href="assets/dpwh-logo.png">
+  <link href="https://unpkg.com/boxicons@2.1.1/css/boxicons.min.css" rel="stylesheet">
+</head>
+
+<body>
+  <nav class="sidebar close">
+    <header>
+      <div class="image-text">
+        <span class="image">
+          <img src="assets/dpwh-logo.png" alt="logo">
+        </span>
+
+        <div class="text header-text">
+          <span class="name">DPWH</span>
+          <span class="profession">Samar 2nd DEO </span>
+        </div>
+      </div>
+
+      <i class='bx bx-chevron-right toggle'></i>
+
+    </header>
+
+    <div class="menu-bar">
+      <div class="menu">
+        <ul class="menu-links">
+          <li class="nav-link">
+            <a href="dashboard.html">
+              <i class='bx bx-home-alt icon'></i>
+              <span class="text nav-text">Dashboard</span>
+            </a>
+          </li>
+          <li class="nav-link">
+            <a href="projects.html">
+              <i class='bx bx-briefcase-alt-2 icon'></i>
+              <span class="text nav-text">Projects</span>
+            </a>
+          </li>
+
+          <li class="nav-link active">
+            <a href="documents.html">
+              <i class='bx bx-file icon'></i>
+              <span class="text nav-text">Documents</span>
+            </a>
+          </li>
+          <li class="nav-link">
+            <a href="gallery.html">
+              <i class='bx bx-image icon'></i>
+              <span class="text nav-text">Gallery</span>
+            </a>
+          </li>
+          <li class="nav-link">
+            <a href="engineers.html">
+              <i class='bx bx-user icon'></i>
+              <span class="text nav-text">Engineers</span>
+            </a>
+          </li>
+        </ul>
+      </div>
+      <div class="bottom-content">
+        <li class="">
+          <a href="#">
+            <i class='bx bx-log-out icon'></i>
+            <span class="text nav-text">Logout</span>
+          </a>
+        </li>
+        <li class="mode">
+          <div class="moon-sun">
+            <i class='bx bx-moon icon moon'></i>
+            <i class='bx bx-sun icon sun'></i>
+          </div>
+          <span class="mode-text text">Dark Mode</span>
+
+          <div class="toggle-switch">
+            <span class="switch"></span>
+          </div>
+
+        </li>
+
+      </div>
+    </div>
+  </nav>
+  
+  <section class="home">
+    <div class="dashboard-header">
+      <h1>Documents</h1>
+      <p>Contract files, notices, and approvals</p>
+    </div>
+    
+    <div class="documents-page">
+      <div class="panel documents-panel">
+        <div class="panel-title">
+          <i class='bx bx-folder-open'></i>
+          <h3>Table of Contents</h3>
+        </div>
+        <p class="documents-meta">Latest contract document set</p>
+        <div class="toc-search">
+          <i class='bx bx-search'></i>
+          <input type="search" id="tocSearch" placeholder="Search documents..." />
+        </div>
+        
+        <div class="toc">
+          <div class="toc-section" data-section="contracts">
+            <button class="toc-header" type="button" aria-expanded="false">
+              <span>Contracts</span>
+              <i class='bx bx-chevron-down'></i>
+            </button>
+            <ul class="toc-items" id="tocContracts"></ul>
+          </div>
+          
+          <div class="toc-section" data-section="planning">
+            <button class="toc-header" type="button" aria-expanded="false">
+              <span>Planning and Design Section Documents</span>
+              <i class='bx bx-chevron-down'></i>
+            </button>
+            <ul class="toc-items" id="tocPlanning"></ul>
+          </div>
+          
+          <div class="toc-section" data-section="construction">
+            <button class="toc-header" type="button" aria-expanded="false">
+              <span>Construction Documents</span>
+              <i class='bx bx-chevron-down'></i>
+            </button>
+            <ul class="toc-items" id="tocConstruction"></ul>
+          </div>
+          
+          <div class="toc-section" data-section="qa">
+            <button class="toc-header" type="button" aria-expanded="false">
+              <span>Quality Assurance Documents</span>
+              <i class='bx bx-chevron-down'></i>
+            </button>
+            <ul class="toc-items" id="tocQa"></ul>
+          </div>
+          
+
+          <div class="toc-section" data-section="contractor">
+            <button class="toc-header" type="button" aria-expanded="false">
+              <span>Contractor's Documents</span>
+              <i class='bx bx-chevron-down'></i>
+            </button>
+            <ul class="toc-items" id="tocContractor"></ul>
+          </div>
+          
+          
+          <div class="toc-section">
+            <button class="toc-header" type="button" aria-expanded="false">
+              <span>Miscellaneous Documents</span>
+              <i class='bx bx-chevron-down'></i>
+            </button>
+            <ul class="toc-items">
+              <li class="add-file"><i class='bx bx-plus'></i> Add File</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <div class="pdf-modal" id="pdfModal" aria-hidden="true">
+    <div class="pdf-modal-card">
+      <div class="pdf-modal-header">
+        <h3 id="pdfTitle">Document Preview</h3>
+        <button class="pdf-close" id="pdfClose" type="button" aria-label="Close">
+          <i class='bx bx-x'></i>
+        </button>
+      </div>
+      <div class="pdf-modal-body">
+        <iframe id="pdfFrame" title="PDF Preview"></iframe>
+        <div class="pdf-placeholder" id="pdfPlaceholder">
+          <i class='bx bx-file'></i>
+          <p>PDF not available yet.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="config.js"></script>
+  <script src="documents.js"></script>
+</body>
+
+</html>

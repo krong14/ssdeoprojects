@@ -1,0 +1,608 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Projects</title>
+    <link rel="stylesheet" href='projects.css'>
+    <link rel="icon" type="image/png" href="assets/dpwh-logo.png">
+    <link href='https://unpkg.com/boxicons@2.1.1/css/boxicons.min.css' rel="stylesheet">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+</head>
+
+<body>
+    <nav class="sidebar close">
+        <header>
+            <div class="image-text">
+                <span class="image">
+                    <img src="assets/dpwh-logo.png" alt="logo">
+                </span>
+
+                <div class="text header-text">
+                    <span class="name">DPWH</span>
+                    <span class="profession">Samar 2nd DEO </span>
+                </div>
+            </div>
+
+            <i class='bx bx-chevron-right toggle'></i>
+
+        </header>
+
+        <div class="menu-bar">
+            <div class="menu">
+                <ul class="menu-links">
+                    <li class="nav-link">
+                        <a href="dashboard.html">
+                            <i class='bx bx-home-alt icon'></i>
+                            <span class="text nav-text">Dashboard</span>
+                        </a>
+                    </li>
+                    <li class="nav-link active">
+                        <a href="projects.html">
+                            <i class='bx bx-briefcase-alt-2 icon'></i>
+                            <span class="text nav-text">Projects</span>
+                        </a>
+                    </li>
+
+
+                    <li class="nav-link">
+                        <a href="documents.html">
+                            <i class='bx bx-file icon'></i>
+                            <span class="text nav-text">Documents</span>
+                        </a>
+                    </li>
+                    <li class="nav-link">
+                        <a href="gallery.html">
+                            <i class='bx bx-image icon'></i>
+                            <span class="text nav-text">Gallery</span>
+                        </a>
+                    </li>
+                    <li class="nav-link">
+                        <a href="engineers.html">
+                            <i class='bx bx-user icon'></i>
+                            <span class="text nav-text">Engineers</span>
+                        </a>
+                    </li>
+                </ul>
+            </div>
+            <div class="bottom-content">
+                <li class="">
+                    <a href="#">
+                        <i class='bx bx-log-out icon'></i>
+                        <span class="text nav-text">Logout</span>
+                    </a>
+                </li>
+                <li class="mode">
+                    <div class="moon-sun">
+                        <i class='bx bx-moon icon moon'></i>
+                        <i class='bx bx-sun icon sun'></i>
+                    </div>
+                    <span class="mode-text text">Dark Mode</span>
+
+                    <div class="toggle-switch">
+                        <span class="switch"></span>
+                    </div>
+
+                </li>
+
+            </div>
+        </div>
+    </nav>
+
+    <section class="projects">
+
+        <!------------------------------------------------------------------------------------------------->
+        <!-- PAGE HEADER -->
+        <div class="dashboard-header projects-header">
+            <div>
+                <h1>List of Projects</h1>
+                <p>DPWH Samar 2nd District Engineering Office</p>
+            </div>
+
+            <button class="add-project-btn" id="openAddProject">
+                <i class='bx bx-plus'></i>
+                Add Project
+            </button>
+        </div>
+
+
+        <div class="contracts-header">
+            <div class="contracts-count">
+                <i class='bx bx-folder'></i>
+                <span id="contractsCount">0 Contracts Found</span>
+            </div>
+        </div>
+        <!------------------------------------------------------------------------------------------------->
+        <div class="contracts-table-wrapper">
+            <table class="contracts-table">
+                <thead>
+                    <tr data-contract-id="23JH0035">
+                        <th>Contract Description</th>
+                        <th>Contractor</th>
+                        <th>Cost</th>
+                        <th>Accomplishment</th>
+                        <th>Status</th>
+                        <th>Completion Date</th>
+                        <th>Report</th>
+                    </tr>
+                </thead>
+                <!-- =========================================================================================== -->
+                <tbody id="contractsTableBody">
+                    <!-- Rows are injected by projects.js -->
+                </tbody>
+            </table>
+        </div>
+        <!--================================================================================================-->
+        <!-- ADD PROJECT MODAL -->
+        <div class="modal-overlay" id="addProjectModal">
+            <div class="modal">
+
+                <!-- HEADER -->
+                <div class="modal-header">
+                    <h3 id="modalTitle">Add New Project</h3>
+                    <button class="modal-close" id="closeAddProject">
+                        <i class='bx bx-x'></i>
+                    </button>
+                </div>
+
+                <!-- STEP 1 -->
+                <div class="modal-body step step-1 active">
+
+                    <div class="form-group">
+                        <label for="contractId">Contract ID</label>
+                        <input id="contractId" type="text" placeholder="e.g. 26IK0000">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="contractDescription">Contract Description</label>
+                        <input id="contractDescription" type="text" placeholder="Road Concreting of Brgy...">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="contractor">Contractor</label>
+                        <input id="contractor" type="text">
+                    </div>
+                    <div class="form-group">
+                        <label>Category</label>
+
+                        <div class="filter-pill category-pill dropdown-pill modal-pill" id="modalCategoryPill">
+                            <div class="pill-header">
+                                <i class='bx bx-filter'></i>
+                                <span id="modalCategoryLabel">All Categories</span>
+                                <i class='bx bx-chevron-down'></i>
+                            </div>
+
+                            <div class="category-dropdown">
+                                <div class="cat-option active">
+                                    <i class='bx bx-filter'></i> All Categories
+                                </div>
+                                <div class="cat-option">
+                                    <i class='bx bx-git-merge'></i> Bridges
+                                </div>
+                                <div class="cat-option">
+                                    <i class='bx bx-building'></i> Buildings and Facilities
+                                </div>
+                                <div class="cat-option">
+                                    <i class='bx bx-water'></i> Flood Control and Drainage
+                                </div>
+                                <div class="cat-option">
+                                    <i class='bx bx-transfer'></i> Roads
+                                </div>
+                                <div class="cat-option">
+                                    <i class='bx bx-droplet'></i> Septage and Sewerage Plants
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+
+                    <div class="form-group">
+                        <label for="appropriation">Appropriation</label>
+                        <input id="appropriation" type="text" class="money-input"  placeholder="₱ 0.00"
+                            inputmode="decimal">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="contractCost">Contract Cost</label>
+                        <input id="contractCost" type="text" class="money-input" placeholder="₱ 0.00"
+                            inputmode="decimal">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="approvedBudgetCost">Approved Budget Cost</label>
+                        <input id="approvedBudgetCost" type="text" class="money-input" placeholder="₱ 0.00"
+                            inputmode="decimal">
+                    </div>
+
+
+
+
+                    <div class="two-col">
+                        <div class="form-group">
+                            <label for="startDate">Start Date</label>
+                            <input id="startDate" type="date">
+                        </div>
+                        <div class="form-group">
+                            <label for="expirationDate">Expiration Date</label>
+                            <input id="expirationDate" type="date">
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="projectLocation">Location</label>
+                        <input id="projectLocation" type="text" placeholder="e.g. Paranas, Samar">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="projectCoordinates">Coordinates</label>
+                        <input id="projectCoordinates" type="text" placeholder="e.g. 11.7731947, 124.8856814">
+                    </div>
+
+                </div>
+
+                <!-- STEP 2 -->
+                <div class="modal-body step step-2">
+
+                    <div class="form-group">
+                        <label for="projectEngineer">Project Engineer</label>
+                        <input type="text" id="projectEngineer" list="projectEngineerList">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="materialsEngineer">Materials Engineer</label>
+                        <input type="text" id="materialsEngineer" list="materialsEngineerList">
+                    </div>
+
+                    <div class="form-group">
+                      <label for="projectInspector">Provisional Engineer</label>
+                        <input type="text" id="projectInspector" list="provisionalEngineerList">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="residentEngineer">Resident Engineer</label>
+                        <input type="text" id="residentEngineer" list="residentEngineerList">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="qaInCharge">QA In-Charge</label>
+                        <input type="text" id="qaInCharge" list="qaInChargeList">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="contractorMaterialsEngineer">Contractor’s Materials Engineer</label>
+                        <input type="text" id="contractorMaterialsEngineer" list="contractorMaterialsEngineerList">
+                    </div>
+
+                </div>
+
+                <datalist id="projectEngineerList"></datalist>
+                <datalist id="materialsEngineerList"></datalist>
+                <datalist id="provisionalEngineerList"></datalist>
+                <datalist id="residentEngineerList"></datalist>
+                <datalist id="qaInChargeList"></datalist>
+                <datalist id="contractorMaterialsEngineerList"></datalist>
+
+
+                <!-- FOOTER -->
+                <div class="modal-footer">
+                    <button class="btn secondary" id="cancelBtn">Cancel</button>
+                    <button class="btn secondary hidden" id="backBtn">Back</button>
+                    <button class="btn primary" id="nextBtn">Next</button>
+                    <button class="btn primary hidden" id="saveBtn">Save Project</button>
+                </div>
+
+            </div>
+        </div>
+        <!-- =================================================================================== -->
+        <!-- UPDATE PROJECT MODAL -->
+        <div class="modal-overlay" id="updateProjectModal">
+            <div class="modal modal-sm">
+
+                <!-- HEADER -->
+                <div class="modal-header">
+                    <h3>Update Project</h3>
+                    <button class="modal-close" id="closeUpdateProject">
+                        <i class='bx bx-x'></i>
+                    </button>
+                </div>
+
+                <!-- BODY -->
+                <div class="modal-body">
+                    <div class="form-group">
+                        <label for="updateStatus">Status</label>
+                        <select id="updateStatus">
+                            <option value="">Select Status</option>
+                            <option value="On-Going">On-Going</option>
+                            <option value="Completed">Completed</option>
+                            <option value="Suspended">Suspended</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="updateProgress">Accomplishment (%)</label>
+                        <input id="updateProgress" type="number" min="0" max="100" step="1" placeholder="0">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="updateDate">Latest Date Updated</label>
+                        <input id="updateDate" type="date">
+                    </div>
+
+                    <div class="form-group">
+                        <button class="btn secondary" id="toggleRevisedExpiration" type="button">
+                            <i class='bx bx-calendar'></i>
+                            Add Revised Expiration Date
+                        </button>
+                    </div>
+
+                    <div class="form-group hidden" id="revisedExpirationContainer"></div>
+
+                    <div class="form-group">
+                        <button class="btn secondary" id="openVariationOrder" type="button">
+                            <i class='bx bx-git-branch'></i>
+                            Add Variation Order
+                        </button>
+                    </div>
+                </div>
+
+                <!-- FOOTER -->
+                <div class="modal-footer">
+                    <button class="btn secondary" id="cancelUpdateBtn">Cancel</button>
+                    <button class="btn primary" id="saveUpdateBtn" type="button">Save Update</button>
+                </div>
+
+            </div>
+        </div>
+        <!-- =================================================================================== -->
+        <!-- PROJECT DETAILS MODAL ---------------------------------------------------------------->
+        <div class="modal-overlay" id="projectDetailsModal">
+            <div class="modal modal-lg">
+
+                <!-- HEADER -->
+                <div class="modal-header orange">
+                    <h3>Contract Details</h3>
+                    <button class="modal-close" id="closeDetailsModal">
+                        <i class="bx bx-x"></i>
+                    </button>
+                </div>
+
+                <!-- BODY -->
+                <div class="modal-body">
+
+                    <!-- TITLE + COST -->
+                    <div class="details-top">
+                        <div>
+                            <h2 id="detailsTitle"></h2>
+                            <div class="details-tags">
+                                <span class="tag success" id="detailsStatus">Completed</span>
+                                <span class="tag warning" id="detailsCategory">Roads</span>
+                            </div>
+                        </div>
+
+                        <div class="details-cost">
+                            <small>Contract Cost</small>
+                            <div id="detailsCost"></div>
+                            <button class="btn secondary details-download" id="downloadContractInfo" type="button">
+                                <i class='bx bx-download'></i>
+                                Download Project Info
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- TABS -->
+                    <div class="details-tabs">
+                        <button class="tab-btn active" data-tab="contract">Contract Information</button>
+                        <button class="tab-btn" data-tab="location">Location Data</button>
+                        <button class="tab-btn" data-tab="in-charge">Project In-Charge</button>
+                        <button class="tab-btn" data-tab="gallery">Gallery</button>
+                        <button class="tab-btn" data-tab="documents">Documents</button>
+                        <button class="tab-btn" data-tab="pow">Program of Works</button>
+                    </div>
+
+                    <!-- CONTENT -->
+                    <div class="modal-tabs">
+                        <div class="tab-content active" id="tab-contract">
+
+                            <div class="info-block">
+                                <label>Contract Description</label>
+                                <p id="detailsDescription"></p>
+                            </div>
+
+                            <div class="info-block">
+                                <label>Contractor</label>
+                                <p id="detailsContractor"></p>
+                            </div>
+
+                            <div class="info-grid">
+                                <div class="info-block">
+                                    <label>Start Date</label>
+                                    <p id="detailsStart"></p>
+                                </div>
+
+                                <div class="info-block">
+                                    <label>Expiration Date</label>
+                                    <p id="detailsExpiration"></p>
+                                </div>
+
+                                <div class="info-block">
+                                    <label>Completion Date</label>
+                                    <p id="detailsCompletion"></p>
+                                </div>
+                            </div>
+
+                        </div>
+
+                        <!-- LOCATION DATA TAB --------------------------------------------------------------------->
+                        <div class="tab-content" id="tab-location">
+                            <!-- LOCATION -->
+                            <div class="info-box">
+                                <label>Location</label>
+                                <div class="info-value" id="detailsLocation">-</div>
+                            </div>
+
+                            <!-- COORDINATES -->
+                            <div class="info-box coordinates-box">
+                                <div>
+                                    <label>Coordinates</label>
+                                    <div class="info-value" id="detailsCoordinates">-</div>
+                                </div>
+                                <button class="btn secondary map-direction" id="getDirectionsBtn" type="button">
+                                    <i class='bx bx-navigation'></i>
+                                    Get Direction
+                                </button>
+                            </div>
+                            <!-- MAP HEADER -->
+                            <div class="map-header">
+                                <h4><i class='bx bx-map'></i> Map View</h4>
+
+                                <div class="map-toggle">
+                                    <button class="active" id="streetBtn">
+                                        <i class='bx bx-map-alt'></i> Street
+                                    </button>
+                                    <button id="satelliteBtn">
+                                        <i class='bx bx-world'></i> Satellite
+                                    </button>
+                                </div>
+                            </div>
+
+                            <!-- MAP -->
+                            <div id="projectMap"></div>
+
+                        </div>
+                        <div class="tab-content" id="tab-in-charge">
+
+                            <div class="info-block">
+                                <label>Project Engineer</label>
+                                <div class="engineer-detail" id="detailsProjectEngineer"></div>
+                            </div>
+
+                            <div class="info-block">
+                                <label>Materials Engineer</label>
+                                <div class="engineer-detail" id="detailsMaterialsEngineer"></div>
+                            </div>
+
+                            <div class="info-block">
+                            <label>Provisional Engineer</label>
+                                <div class="engineer-detail" id="detailsProjectInspector"></div>
+                            </div>
+
+                            <div class="info-block">
+                                <label>Resident Engineer</label>
+                                <div class="engineer-detail" id="detailsResidentEngineer"></div>
+                            </div>
+
+                            <div class="info-block">
+                                <label>QA In-Charge</label>
+                                <div class="engineer-detail" id="detailsQaInCharge"></div>
+                            </div>
+
+                            <div class="info-block">
+                                <label>Contractor’s Materials Engineer</label>
+                                <div class="engineer-detail" id="detailsContractorMaterialsEngineer"></div>
+                            </div>
+
+                        </div>
+
+                        <!-- GALLERY TAB ------------------------------------------------------------------>
+                        <div class="tab-content" id="tab-gallery">
+                            <h4 class="section-title">
+                                <i class='bx bx-image'></i> Project Gallery
+                            </h4>
+
+                            <div id="galleryContainer">
+                                <!-- Gallery groups will be injected here by projects.js -->
+                            </div>
+                        </div>
+
+                        <!-- DOCUMENTS TAB ------------------------------------------------------------------>
+                        <div class="tab-content" id="tab-documents">
+                            <h4 class="section-title">
+                                <i class='bx bx-file'></i> Table of Contents
+                            </h4>
+
+                            <div class="documents-list" id="documentsContainer">
+                                <!-- Documents will be injected here by projects.js -->
+                            </div>
+                        </div>
+
+                        <!-- PROGRAM OF WORKS TAB ------------------------------------------------------------------>
+                        <div class="tab-content" id="tab-pow">
+                            <div class="pow-header">
+                                <div class="pow-title">
+                                    <i class='bx bx-list-check'></i> Program of Works
+                                </div>
+                                <button class="btn secondary pow-add-btn" id="addPowDetailsItem" type="button">
+                                    <i class='bx bx-plus'></i>
+                                    Add Item
+                                </button>
+                            </div>
+                            <div class="pow-subheader">Original</div>
+
+                            <div class="pow-table-wrapper">
+                                <table class="pow-table pow-details-table">
+                                    <thead>
+                                        <tr>
+                                            <th>Item No.</th>
+                                            <th>Description</th>
+                                            <th>Quantity</th>
+                                            <th>Unit</th>
+                                            <th></th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="powDetailsBody"></tbody>
+                                </table>
+                            </div>
+                            <div class="pow-variation-container" id="powVariationContainer"></div>
+                        </div>
+
+
+
+
+
+
+                    </div>
+                </div>
+
+            </div>
+
+
+
+
+
+
+
+
+
+    </section>
+    <!-- PHOTO DETAILS MODAL -->
+    <div class="modal-overlay" id="photoModal">
+        <div class="photo-modal">
+            <div class="photo-modal-left">
+                <button class="modal-close photo-modal-close" id="closePhotoModal">&times;</button>
+                <img id="photoModalImage" src="" alt="Photo details">
+            </div>
+            <div class="photo-modal-right">
+                <h3>Photo Information</h3>
+                <div class="photo-info-row"><strong>ID</strong><span id="photoId">—</span></div>
+                <div class="photo-info-row"><strong>Purpose</strong><span id="photoPurpose">—</span></div>
+                <div class="photo-info-row"><strong>Date Captured</strong><span id="photoDate">—</span></div>
+                <div class="photo-info-row"><strong>Location</strong><span id="photoLocation">—</span></div>
+
+                <div style="margin-top:18px">
+                    <a id="photoDownloadBtn" class="btn primary" href="#" download>Download Photo</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="config.js"></script>
+    <script src="projects.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+</body>
+
+</html>
+
+
