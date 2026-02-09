@@ -1218,8 +1218,6 @@ function renderDocuments(contractId) {
   if (!container) return;
 
   const key = String(contractId || "").trim().toUpperCase();
-  const files = loadContractFiles();
-  const fileData = loadContractFilesData();
   container.innerHTML = "";
 
   if (!key) {
@@ -1227,47 +1225,88 @@ function renderDocuments(contractId) {
     return;
   }
 
-  Object.entries(sectionDocs).forEach(([section, docs]) => {
-    const header = document.createElement("div");
-    header.className = "document-section-title";
-    header.textContent = documentsSectionLabels[section] || section;
-    container.appendChild(header);
+  const renderWithIndex = (index = {}) => {
+    container.innerHTML = "";
+    Object.entries(sectionDocs).forEach(([section, docs]) => {
+      const header = document.createElement("div");
+      header.className = "document-section-title";
+      header.textContent = documentsSectionLabels[section] || section;
+      container.appendChild(header);
 
+      docs.forEach(doc => {
+        const entry = index?.[section]?.[doc] || null;
+        const fileName = entry?.fileName || entry?.name || "";
+        const item = document.createElement("div");
+        item.className = `document-item ${fileName ? "doc-has-file" : "doc-missing"}`;
+
+        const safeDoc = escapeHtml(doc);
+        const safeStatus = escapeHtml(fileName ? `File: ${fileName}` : "No file uploaded");
+        const iconClass = fileName ? "bx-check-circle" : "bx-x-circle";
+
+        item.innerHTML = `
+          <div class="document-item-left">
+            <i class='bx ${iconClass} document-icon'></i>
+            <div class="document-info">
+              <h5>${safeDoc}</h5>
+              <p>${safeStatus}</p>
+            </div>
+          </div>
+        `;
+
+        if (entry?.url) {
+          const btn = document.createElement("button");
+          btn.className = "document-item-action";
+          btn.innerHTML = '<i class="bx bx-show"></i>';
+          btn.title = "View document";
+          btn.addEventListener("click", () => {
+            window.open(entry.url, "_blank");
+          });
+          item.appendChild(btn);
+        }
+
+        container.appendChild(item);
+      });
+    });
+  };
+
+  if (useRemoteStorage) {
+    container.innerHTML = `<div class="empty-state">Loading documents...</div>`;
+    fetch(`${apiBase}/api/documents/${encodeURIComponent(key)}`)
+      .then(res => res.json())
+      .then(data => {
+        const index = {};
+        (data?.documents || []).forEach(item => {
+          if (!item.section || !item.docName) return;
+          if (!index[item.section]) index[item.section] = {};
+          index[item.section][item.docName] = item;
+        });
+        renderWithIndex(index);
+      })
+      .catch(() => {
+        container.innerHTML = `<div class="empty-state">Failed to load documents.</div>`;
+      });
+    return;
+  }
+
+  const files = loadContractFiles();
+  const fileData = loadContractFilesData();
+  const localIndex = {};
+  Object.entries(sectionDocs).forEach(([section, docs]) => {
+    if (!localIndex[section]) localIndex[section] = {};
     docs.forEach(doc => {
       const fileKey = getFileKey(`${section}:${doc}`, key);
       const fileName = files[fileKey] || "";
       const data = fileData[fileKey];
-      const item = document.createElement("div");
-      item.className = `document-item ${fileName ? "doc-has-file" : "doc-missing"}`;
-
-      const safeDoc = escapeHtml(doc);
-      const safeStatus = escapeHtml(fileName ? `File: ${fileName}` : "No file uploaded");
-      const iconClass = fileName ? "bx-check-circle" : "bx-x-circle";
-
-      item.innerHTML = `
-        <div class="document-item-left">
-          <i class='bx ${iconClass} document-icon'></i>
-          <div class="document-info">
-            <h5>${safeDoc}</h5>
-            <p>${safeStatus}</p>
-          </div>
-        </div>
-      `;
-
-      if (data?.dataUrl) {
-        const btn = document.createElement("button");
-        btn.className = "document-item-action";
-        btn.innerHTML = '<i class="bx bx-show"></i>';
-        btn.title = "View document";
-        btn.addEventListener("click", () => {
-          window.open(data.dataUrl, "_blank");
-        });
-        item.appendChild(btn);
+      if (fileName || data?.dataUrl) {
+        localIndex[section][doc] = {
+          fileName,
+          name: fileName,
+          url: data?.dataUrl || ""
+        };
       }
-
-      container.appendChild(item);
     });
   });
+  renderWithIndex(localIndex);
 }
 
 function parseCoordinates(value) {
