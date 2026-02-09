@@ -1,4 +1,4 @@
-﻿const body = document.querySelector("body")
+const body = document.querySelector("body")
 const sidebar = body.querySelector(".sidebar")
 const toggle = body.querySelector(".toggle")
 const modeSwitch = body.querySelector(".toggle-switch")
@@ -42,6 +42,7 @@ function getApiBase() {
 }
 
 const apiBase = getApiBase();
+const useRemoteStorage = Boolean(apiBase);
 
 modeSwitch.addEventListener("click", () => {
   body.classList.toggle("dark");
@@ -1104,9 +1105,6 @@ function renderGallery(contractId) {
   const container = document.getElementById('galleryContainer');
   if (!container) return;
   const key = String(contractId || "").trim().toUpperCase();
-  const raw = localStorage.getItem('galleryPhotos');
-  const all = raw ? JSON.parse(raw) : {};
-  const items = Array.isArray(all[key]) ? all[key] : [];
 
   container.innerHTML = '';
 
@@ -1115,15 +1113,22 @@ function renderGallery(contractId) {
 
   const header = document.createElement('div');
   header.className = 'gallery-group-header';
-  header.innerHTML = `<strong>${key}</strong> <span class="photo-count">${items.length} photos</span>`;
+  header.innerHTML = `<strong>${key}</strong> <span class="photo-count">Loading...</span>`;
   group.appendChild(header);
 
   const photos = document.createElement('div');
   photos.className = 'gallery-photos';
+  photos.innerHTML = `<div class="empty-state">Loading photos...</div>`;
+  group.appendChild(photos);
+  container.appendChild(group);
 
-  if (!items.length) {
-    photos.innerHTML = `<div class="empty-state">No photos uploaded.</div>`;
-  } else {
+  const renderItems = (items = []) => {
+    header.innerHTML = `<strong>${key}</strong> <span class="photo-count">${items.length} photos</span>`;
+    photos.innerHTML = '';
+    if (!items.length) {
+      photos.innerHTML = `<div class="empty-state">No photos uploaded.</div>`;
+      return;
+    }
     items.forEach((item, index) => {
       const imgWrap = document.createElement('div');
       imgWrap.className = 'gallery-photo';
@@ -1152,10 +1157,29 @@ function renderGallery(contractId) {
       }));
       photos.appendChild(imgWrap);
     });
+  };
+
+  if (useRemoteStorage) {
+    fetch(`${apiBase}/api/gallery/${encodeURIComponent(key)}`)
+      .then(res => res.json())
+      .then(data => {
+        const items = (data?.photos || []).map(item => ({
+          name: item.name || item.fileName || "",
+          date: item.date || item.updatedAt || "",
+          dataUrl: item.url || item.dataUrl || ""
+        }));
+        renderItems(items);
+      })
+      .catch(() => {
+        photos.innerHTML = `<div class="empty-state">Failed to load photos.</div>`;
+      });
+    return;
   }
 
-  group.appendChild(photos);
-  container.appendChild(group);
+  const raw = localStorage.getItem('galleryPhotos');
+  const all = raw ? JSON.parse(raw) : {};
+  const items = Array.isArray(all[key]) ? all[key] : [];
+  renderItems(items);
 }
 
 function openPhotoModal(photo) {
