@@ -181,11 +181,35 @@ function renderAlbum(contractId, description) {
     <div class="gallery-info">
       <div class="album-header">
         <div class="album-title">${key} - Geotagged Photos</div>
+        <div class="album-actions">
+          <label class="album-upload-btn">
+            <i class='bx bx-upload'></i>
+            Upload
+            <input type="file" accept="image/*" multiple hidden>
+          </label>
+          <button class="album-delete-btn" type="button" data-contract="${key}">
+            <i class='bx bx-trash'></i>
+            Delete
+          </button>
+        </div>
       </div>
       <div class="gallery-thumb">Loading photos...</div>
+      <div class="album-meta">${description ? `Project: ${description}` : "Ready for uploads"}</div>
+      <div class="album-photos"></div>
     </div>
   `;
   galleryGrid.appendChild(card);
+
+  const bindUpload = () => {
+    const input = card.querySelector("input[type=\"file\"]");
+    input?.addEventListener("change", (e) => {
+      const files = e.target.files;
+      addPhotosForContract(key, files);
+      e.target.value = "";
+    });
+  };
+
+  bindUpload();
 
   const loadItems = useRemoteStorage
     ? ensureRemoteGallery(key)
@@ -197,51 +221,26 @@ function renderAlbum(contractId, description) {
   loadItems
     .then(items => {
       const preview = items.find(p => p.dataUrl) || null;
-      card.innerHTML = `
-        <div class="gallery-info">
-          <div class="album-header">
-            <div class="album-title">${key} - Geotagged Photos</div>
-            <div class="album-actions">
-              <label class="album-upload-btn">
-                <i class='bx bx-upload'></i>
-                Upload
-                <input type="file" accept="image/*" multiple hidden>
-              </label>
-              <button class="album-delete-btn" type="button" data-contract="${key}">
-                <i class='bx bx-trash'></i>
-                Delete
-              </button>
-            </div>
-          </div>
-          <div class="gallery-thumb${preview ? " has-image" : ""}">
-            ${preview ? `<img src="${preview.dataUrl}" alt="Preview" data-contract="${key}" data-index="${items.indexOf(preview)}">`
-              : (items.length ? `${items.length} Photos` : "No Photos Yet")}
-          </div>
-          <div class="album-meta">${description ? `Project: ${description}` : "Ready for uploads"}</div>
-          <div class="album-photos">
-            ${items.slice(0, 6).map((item, idx) => item.dataUrl
-              ? `<img class="album-photo-thumb" src="${item.dataUrl}" alt="${item.name}" data-contract="${key}" data-index="${idx}">`
-              : `<span class="album-photo-chip">${item.name}</span>`
-            ).join("")}
-          </div>
-        </div>
-      `;
-
-      const input = card.querySelector("input[type=\"file\"]");
-      input?.addEventListener("change", (e) => {
-        const files = e.target.files;
-        addPhotosForContract(key, files);
-      });
+      const thumb = card.querySelector(".gallery-thumb");
+      const meta = card.querySelector(".album-meta");
+      const photosEl = card.querySelector(".album-photos");
+      if (thumb) {
+        thumb.className = `gallery-thumb${preview ? " has-image" : ""}`;
+        thumb.innerHTML = preview
+          ? `<img src="${preview.dataUrl}" alt="Preview" data-contract="${key}" data-index="${items.indexOf(preview)}">`
+          : (items.length ? `${items.length} Photos` : "No Photos Yet");
+      }
+      if (meta) meta.textContent = description ? `Project: ${description}` : "Ready for uploads";
+      if (photosEl) {
+        photosEl.innerHTML = items.slice(0, 6).map((item, idx) => item.dataUrl
+          ? `<img class="album-photo-thumb" src="${item.dataUrl}" alt="${item.name}" data-contract="${key}" data-index="${idx}">`
+          : `<span class="album-photo-chip">${item.name}</span>`
+        ).join("");
+      }
     })
     .catch(err => {
-      card.innerHTML = `
-        <div class="gallery-info">
-          <div class="album-header">
-            <div class="album-title">${key} - Geotagged Photos</div>
-          </div>
-          <div class="gallery-thumb">Failed to load photos.</div>
-        </div>
-      `;
+      const thumb = card.querySelector(".gallery-thumb");
+      if (thumb) thumb.textContent = "Failed to load photos.";
       console.warn("Failed to load gallery:", err);
     });
 }
