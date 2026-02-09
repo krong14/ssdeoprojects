@@ -103,8 +103,8 @@ function normalizeRole(role) {
   const lower = value.toLowerCase();
   if (lower === "project engineer" || lower === "project engineers") return "Project Engineer";
   if (lower === "materials engineer" || lower === "materials engineers") return "Materials Engineer";
-  if (lower === "provisional engineer" || lower === "provisional engineers") return "Provisional Engineer";
-  if (lower === "project inspector" || lower === "project inspectors") return "Provisional Engineer";
+  if (lower === "provisional engineer" || lower === "provisional engineers") return "Project Inspector";
+  if (lower === "project inspector" || lower === "project inspectors") return "Project Inspector";
   if (lower === "resident engineer" || lower === "resident engineers") return "Resident Engineer";
   if (lower === "qa in-charge" || lower === "qa in charge" || lower === "qa in-charges") return "QA In-Charge";
   if (lower === "contractor materials engineer" || lower === "contractors materials engineer") return "Contractor Materials Engineer";
@@ -155,7 +155,7 @@ function updateCount(count) {
 const roleGroups = [
   { key: "Project Engineer", label: "Project Engineers" },
   { key: "Materials Engineer", label: "Materials Engineers" },
-  { key: "Provisional Engineer", label: "Provisional Engineers" },
+  { key: "Project Inspector", label: "Project Inspectors" },
   { key: "Resident Engineer", label: "Resident Engineers" },
   { key: "QA In-Charge", label: "QA In-Charge" },
   { key: "Contractor Materials Engineer", label: "Contractors Materials Engineers" }
