@@ -1,14 +1,14 @@
-const SESSION_KEY = "dpwh_current_user";
+const sessionKey = "dpwh_current_user";
 
 function getSession() {
-  const fromLocal = localStorage.getItem(SESSION_KEY);
+  const fromLocal = localStorage.getItem(sessionKey);
   if (fromLocal) return fromLocal;
-  return sessionStorage.getItem(SESSION_KEY);
+  return sessionStorage.getItem(sessionKey);
 }
 
 function clearSession() {
-  localStorage.removeItem(SESSION_KEY);
-  sessionStorage.removeItem(SESSION_KEY);
+  localStorage.removeItem(sessionKey);
+  sessionStorage.removeItem(sessionKey);
 }
 
 const session = getSession();
