@@ -60,7 +60,6 @@ const currentUser = getCurrentUser();
 const currentUserName = String(currentUser?.name || "").trim();
 const isAdminUser = Boolean(currentUser?.isAdmin);
 const NOTIF_PREFIX = "dpwh_notifications_";
-const chatApiEndpoint = apiBase ? `${apiBase}/api/chat` : "";
 
 function getNotificationKey() {
   const email = String(currentUser?.email || "guest").trim().toLowerCase();
@@ -148,70 +147,6 @@ function attachNotificationBell() {
     }
   });
   renderNotificationBell();
-}
-
-// Chat assistant
-function appendChatMessage(text, role = "bot") {
-  const body = document.getElementById("chatBody");
-  if (!body) return;
-  const el = document.createElement("div");
-  el.className = `chat-message ${role}`;
-  el.textContent = text;
-  body.appendChild(el);
-  body.scrollTop = body.scrollHeight;
-}
-
-async function sendChatMessage(message) {
-  if (!message) return;
-  appendChatMessage(message, "user");
-  const thinkingId = `thinking-${Date.now()}`;
-  appendChatMessage("Thinking...", "bot");
-  const body = document.getElementById("chatBody");
-  const thinkingEl = body?.lastElementChild;
-
-  if (!chatApiEndpoint) {
-    if (thinkingEl) thinkingEl.textContent = "Chat server not configured.";
-    return;
-  }
-
-  try {
-    const res = await fetch(chatApiEndpoint, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ message })
-    });
-    const data = await res.json();
-    if (thinkingEl) thinkingEl.remove();
-    if (!data.success) {
-      appendChatMessage(data.error || "Error from chat server.", "bot");
-      return;
-    }
-    appendChatMessage(data.reply || "No reply.", "bot");
-  } catch (err) {
-    if (thinkingEl) thinkingEl.remove();
-    appendChatMessage("Network error. Please try again.", "bot");
-  }
-}
-
-function attachChat() {
-  const fab = document.getElementById("chatFab");
-  const win = document.getElementById("chatWindow");
-  const closeBtn = document.getElementById("chatClose");
-  const form = document.getElementById("chatForm");
-  const input = document.getElementById("chatInput");
-  if (!fab || !win || !form || !input) return;
-
-  const toggle = () => win.classList.toggle("open");
-  fab.addEventListener("click", toggle);
-  closeBtn?.addEventListener("click", () => win.classList.remove("open"));
-
-  form.addEventListener("submit", (e) => {
-    e.preventDefault();
-    const msg = input.value.trim();
-    if (!msg) return;
-    input.value = "";
-    sendChatMessage(msg);
-  });
 }
 
 function ensureToastContainer() {
@@ -567,7 +502,6 @@ window.addEventListener("DOMContentLoaded", () => {
   attachDocumentsCardHoverLists();
   fetchProjectsForDashboard();
   attachNotificationBell();
-  attachChat();
 });
 document.addEventListener("DOMContentLoaded", () => {
   document.querySelectorAll(".documents-monitoring .doc-item").forEach(item => {
