@@ -43,6 +43,7 @@
 .admin-panel h3 {
   margin: 0 0 12px;
   font-size: 16px;
+  color: var(--text-main)
 }
 
 .admin-list {
