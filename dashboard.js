@@ -426,7 +426,7 @@ function isOngoingStatus(status) {
 }
 
 function isExpiredStatus(status, expirationDate) {
-  if (isCompletedStatus(status)) return false;
+  if (isCompletedStatus(status) || isSuspendedStatus(status)) return false;
   const s = String(status || "").toLowerCase();
   if (s.includes("expire")) return true;
   const exp = parseDateValue(expirationDate);
