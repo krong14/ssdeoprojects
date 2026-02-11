@@ -1,5 +1,9 @@
 const USERS_KEY = "dpwh_users";
-const ADMIN_EMAILS = ["krong0814@gmail.com", "lemuel.malinao@gmail.com"];
+const ADMIN_EMAILS = [
+  "krong0814@gmail.com",
+  "lemuel.malinao@gmail.com",
+  "alanpancitojr@gmail.com"
+];
 const body = document.querySelector("body");
 const sidebar = body?.querySelector(".sidebar");
 const toggle = body?.querySelector(".toggle");
