@@ -109,16 +109,37 @@
           <i class='bx bx-bell'></i>
           <span class="notif-badge" id="notifBadge">0</span>
         </button>
-        <div class="notif-panel" id="notifPanel">
-          <div class="notif-panel-header">
-            <span>Notifications</span>
-            <button type="button" id="notifClear" class="notif-clear">Clear</button>
-          </div>
-          <div class="notif-list" id="notifList">
-            <div class="notif-empty">No notifications yet.</div>
-          </div>
-        </div>
-      </div>
+  <div class="notif-panel" id="notifPanel">
+    <div class="notif-panel-header">
+      <span>Notifications</span>
+      <button type="button" id="notifClear" class="notif-clear">Clear</button>
+    </div>
+    <div class="notif-list" id="notifList">
+      <div class="notif-empty">No notifications yet.</div>
+    </div>
+  </div>
+</div>
+
+<!-- AI CHAT -->
+<div class="chat-fab" id="chatFab" aria-label="Open chat">
+  <i class='bx bx-message-rounded-dots'></i>
+</div>
+<div class="chat-window" id="chatWindow">
+  <div class="chat-header">
+    <div>
+      <strong>AI Assistant</strong>
+      <div class="chat-sub">Ask about projects and documents</div>
+    </div>
+    <button class="chat-close" id="chatClose">&times;</button>
+  </div>
+  <div class="chat-body" id="chatBody">
+    <div class="chat-message bot">Hi! Ask me about projects, documents, or engineers.</div>
+  </div>
+  <form class="chat-footer" id="chatForm">
+    <input type="text" id="chatInput" placeholder="Type a message..." autocomplete="off">
+    <button type="submit">Send</button>
+  </form>
+</div>
     </div>
 
     <!-- SUMMARY CARDS -->
@@ -599,9 +620,12 @@
 
             <!-- DOCUMENTS TAB -->
             <div class="tab-content" id="tab-documents">
-              <h4 class="section-title">
-                <i class='bx bx-file'></i> Table of Contents
-              </h4>
+              <div class="documents-header-row">
+                <h4 class="section-title">
+                  <i class='bx bx-file'></i> Table of Contents
+                </h4>
+                <div class="documents-total-progress" id="documentsTotalProgress">Total Documents Uploaded: 0% (0/0)</div>
+              </div>
 
               <div class="documents-list" id="documentsContainer"></div>
             </div>
