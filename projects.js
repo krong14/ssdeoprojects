@@ -1,4 +1,4 @@
-﻿const body = document.querySelector("body")
+const body = document.querySelector("body")
 const sidebar = body.querySelector(".sidebar")
 const toggle = body.querySelector(".toggle")
 const modeSwitch = body.querySelector(".toggle-switch")
@@ -151,6 +151,8 @@ function addNotification(message, meta = {}) {
 }
 
 const engineersStorageKey = "engineersDirectory";
+const engineersApiBase = getApiBase();
+const engineersApiEndpoint = engineersApiBase ? `${engineersApiBase}/api/engineers` : "";
 
 function escapeHtml(value) {
     return String(value || "")
@@ -174,6 +176,20 @@ function normalizeEngineerRole(role) {
     if (lower === "contractor materials engineer" || lower === "contractors materials engineer") return "Contractor Materials Engineer";
     if (lower === "contractor's materials engineer" || lower === "contractors materials engineers") return "Contractor Materials Engineer";
     return value;
+}
+
+async function syncEngineersDirectory() {
+    if (!engineersApiEndpoint) return;
+    try {
+        const res = await fetch(engineersApiEndpoint);
+        if (!res.ok) throw new Error(`Status ${res.status}`);
+        const data = await res.json();
+        if (Array.isArray(data?.engineers)) {
+            localStorage.setItem(engineersStorageKey, JSON.stringify(data.engineers));
+        }
+    } catch (err) {
+        console.warn("Engineer directory sync failed:", err);
+    }
 }
 
 function getEngineersFromStorage() {
@@ -1688,7 +1704,10 @@ async function fetchProjects() {
 }
 
 // Populate table on initial load
-window.addEventListener('DOMContentLoaded', fetchProjects);
+window.addEventListener('DOMContentLoaded', () => {
+    syncEngineersDirectory();
+    fetchProjects();
+});
 
 // Navigation transition handlers (moved from inline HTML)
 document.addEventListener('DOMContentLoaded', () => {
