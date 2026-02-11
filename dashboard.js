@@ -1490,6 +1490,9 @@ const documentsSectionLabels = {
   qa: "Quality Assurance",
   contractor: "Contractor"
 };
+const documentDisplayLabels = {
+  Contract: "Contract Aggrement"
+};
 const documentsTotalProgressEl = document.getElementById("documentsTotalProgress");
 
 function hasUploadedDocument(entry) {
@@ -1554,7 +1557,7 @@ function renderDocuments(contractId) {
         const item = document.createElement("div");
         item.className = `document-item ${isUploaded ? "doc-has-file" : "doc-missing"}`;
 
-        const safeDoc = escapeHtml(doc);
+        const safeDoc = escapeHtml(documentDisplayLabels[doc] || doc);
         const statusText = fileName
           ? `File: ${fileName}`
           : (isUploaded ? "Uploaded file" : "No file uploaded");
@@ -2047,4 +2050,3 @@ document.addEventListener('DOMContentLoaded', () => {
     if (e.key === 'ArrowRight') showGalleryPhoto(currentGalleryIndex + 1);
   });
 });
-
