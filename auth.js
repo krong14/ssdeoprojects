@@ -1,6 +1,11 @@
 const USERS_KEY = "dpwh_users";
 const SESSION_KEY = "dpwh_current_user";
-const ADMIN_EMAIL = "krong0814@gmail.com";
+const ADMIN_EMAILS = ["krong0814@gmail.com", "lemuel.malinao@gmail.com"];
+
+function isAdminEmail(email) {
+  const normalized = normalizeEmail(email);
+  return ADMIN_EMAILS.some(admin => normalizeEmail(admin) === normalized);
+}
 
 function loadUsers() {
   const raw = localStorage.getItem(USERS_KEY);
@@ -39,7 +44,7 @@ function storeSession(user, remember) {
     email: user.email,
     name: user.name,
     section: user.section,
-    isAdmin: normalizeEmail(user.email) === normalizeEmail(ADMIN_EMAIL),
+    isAdmin: isAdminEmail(user.email),
     loginAt: new Date().toISOString()
   };
   const json = JSON.stringify(payload);
@@ -76,7 +81,7 @@ function initLogin() {
       setMessage(messageEl, "Invalid email or password.");
       return;
     }
-    const isAdmin = normalizeEmail(user.email) === normalizeEmail(ADMIN_EMAIL);
+    const isAdmin = isAdminEmail(user.email);
     if (!isAdmin) {
       const status = user.status || "pending";
       if (status !== "approved") {
@@ -135,7 +140,7 @@ function initSignup() {
       return;
     }
 
-    const isAdmin = normalizeEmail(email) === normalizeEmail(ADMIN_EMAIL);
+    const isAdmin = isAdminEmail(email);
     const user = {
       name,
       email,
