@@ -106,6 +106,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
 const contractFilesKey = "contractFiles";
 const contractFilesDataKey = "contractFilesData";
+const documentDisplayLabels = {
+  Contract: "Contract Aggrement"
+};
 const apiBase = getApiBase();
 const useRemoteStorage = Boolean(apiBase);
 const remoteDocCache = new Map();
@@ -400,10 +403,11 @@ document.addEventListener('DOMContentLoaded', () => {
                 const fileData = useRemoteStorage ? {} : loadContractFilesData();
                 const currentFile = useRemoteStorage ? "" : (fileStore[fileKey] || "");
                 const hasFileData = useRemoteStorage ? false : Boolean(fileData[fileKey]?.dataUrl);
+                const displayDoc = documentDisplayLabels[doc] || doc;
                 return `
                   <li class="toc-subitem">
                     <div class="toc-item-info">
-                      <div class="subitem-title">${doc}</div>
+                      <div class="subitem-title">${displayDoc}</div>
                       <div class="toc-item-status">${currentFile ? `File: ${currentFile}` : "No file uploaded"}</div>
                     </div>
                     <div class="toc-item-actions">
