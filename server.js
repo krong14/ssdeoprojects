@@ -11,6 +11,8 @@ const { getSignedUrl } = require('@aws-sdk/s3-request-presigner');
 const app = express();
 const PORT = Number(process.env.PORT) || 3000;
 const engineersFilePath = path.join(__dirname, 'engineers.json');
+const powFilePath = path.join(__dirname, 'pow-data.json');
+const OPENAI_API_KEY = process.env.OPENAI_API_KEY || "";
 
 // Wasabi (S3-compatible) storage config
 const WASABI_ACCESS_KEY_ID = process.env.WASABI_ACCESS_KEY_ID || '';
@@ -267,6 +269,131 @@ function findEngineerIndex(list, name, role) {
         String(e.role || '').trim().toLowerCase() === targetRole
     );
 }
+
+// ----------------------------------------------------------------------------------------------
+// Program of Works persistence (JSON file)
+// ----------------------------------------------------------------------------------------------
+function normalizeContractId(value) {
+    return String(value || '').trim().toUpperCase();
+}
+
+function normalizePowItem(item) {
+    if (typeof item === 'string') {
+        return {
+            itemNo: String(item || '').trim(),
+            description: '',
+            quantity: '',
+            unit: ''
+        };
+    }
+    return {
+        itemNo: String(item?.itemNo || '').trim(),
+        description: String(item?.description || '').trim(),
+        quantity: String(item?.quantity || '').trim(),
+        unit: String(item?.unit || '').trim()
+    };
+}
+
+function normalizePowItems(value) {
+    if (!Array.isArray(value)) return [];
+    return value
+        .map(normalizePowItem)
+        .filter(item => item.itemNo || item.description || item.quantity || item.unit);
+}
+
+function normalizeVariationOrders(value) {
+    if (!Array.isArray(value)) return [];
+    if (value.length && !Array.isArray(value[0])) {
+        const one = normalizePowItems(value);
+        return one.length ? [one] : [];
+    }
+    return value
+        .map(list => normalizePowItems(list))
+        .filter(list => list.length);
+}
+
+function readPowStore() {
+    try {
+        if (!fs.existsSync(powFilePath)) return {};
+        const raw = fs.readFileSync(powFilePath, 'utf-8');
+        const parsed = JSON.parse(raw);
+        return parsed && typeof parsed === 'object' ? parsed : {};
+    } catch (err) {
+        return {};
+    }
+}
+
+function writePowStore(store) {
+    const safeStore = store && typeof store === 'object' ? store : {};
+    fs.writeFileSync(powFilePath, JSON.stringify(safeStore, null, 2));
+    return safeStore;
+}
+
+function getPowRecord(contractId) {
+    const key = normalizeContractId(contractId);
+    if (!key) return { programWorks: [], variationOrders: [], updatedAt: '' };
+    const store = readPowStore();
+    const value = store[key] || {};
+    return {
+        programWorks: normalizePowItems(value.programWorks),
+        variationOrders: normalizeVariationOrders(value.variationOrders),
+        updatedAt: String(value.updatedAt || '')
+    };
+}
+
+function setPowRecord(contractId, payload = {}) {
+    const key = normalizeContractId(contractId);
+    if (!key) return { key: '', record: { programWorks: [], variationOrders: [], updatedAt: '' } };
+    const store = readPowStore();
+    const next = {
+        programWorks: normalizePowItems(payload.programWorks),
+        variationOrders: normalizeVariationOrders(payload.variationOrders),
+        updatedAt: new Date().toISOString()
+    };
+    store[key] = next;
+    writePowStore(store);
+    return { key, record: next };
+}
+
+function deletePowRecord(contractId) {
+    const key = normalizeContractId(contractId);
+    if (!key) return false;
+    const store = readPowStore();
+    if (!store[key]) return false;
+    delete store[key];
+    writePowStore(store);
+    return true;
+}
+
+app.get('/api/pow/:contractId', (req, res) => {
+    const contractId = normalizeContractId(req.params.contractId || '');
+    if (!contractId) {
+        return res.status(400).json({ success: false, error: 'Missing contractId.' });
+    }
+    const record = getPowRecord(contractId);
+    res.json({
+        success: true,
+        contractId,
+        programWorks: record.programWorks,
+        variationOrders: record.variationOrders,
+        updatedAt: record.updatedAt
+    });
+});
+
+app.put('/api/pow/:contractId', (req, res) => {
+    const contractId = normalizeContractId(req.params.contractId || '');
+    if (!contractId) {
+        return res.status(400).json({ success: false, error: 'Missing contractId.' });
+    }
+    const { record } = setPowRecord(contractId, req.body || {});
+    res.json({
+        success: true,
+        contractId,
+        programWorks: record.programWorks,
+        variationOrders: record.variationOrders,
+        updatedAt: record.updatedAt
+    });
+});
 
 app.get('/api/engineers', (req, res) => {
     const engineers = readEngineers();
@@ -530,6 +657,7 @@ app.put('/api/update-project/:contractId', (req, res) => {
 
         workbook.Sheets['Projects'] = newWorksheet;
         XLSX.writeFile(workbook, excelFilePath);
+        deletePowRecord(contractId);
 
         res.json({ success: true });
     } catch (error) {
@@ -855,6 +983,45 @@ app.get('/api/get-projects', (req, res) => {
     } catch (error) {
         console.error('Error reading projects:', error);
         res.status(500).json({ success: false, error: error.message });
+    }
+});
+
+// Simple AI chat relay (uses OPENAI_API_KEY)
+app.post('/api/chat', async (req, res) => {
+    if (!OPENAI_API_KEY) {
+        return res.status(503).json({ success: false, error: 'Chat is not configured. Missing OPENAI_API_KEY.' });
+    }
+    const userMessage = String(req.body?.message || '').trim();
+    if (!userMessage) {
+        return res.status(400).json({ success: false, error: 'Message is required.' });
+    }
+    try {
+        const response = await fetch('https://api.openai.com/v1/chat/completions', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${OPENAI_API_KEY}`
+            },
+            body: JSON.stringify({
+                model: 'gpt-3.5-turbo',
+                messages: [
+                    { role: 'system', content: 'You are a helpful assistant for DPWH projects dashboard. Keep replies concise (<=80 words).' },
+                    { role: 'user', content: userMessage }
+                ],
+                temperature: 0.3,
+                max_tokens: 180
+            })
+        });
+        if (!response.ok) {
+            const text = await response.text();
+            return res.status(502).json({ success: false, error: 'Upstream error', detail: text });
+        }
+        const data = await response.json();
+        const content = data?.choices?.[0]?.message?.content || '';
+        res.json({ success: true, reply: content });
+    } catch (err) {
+        console.error('Chat error:', err);
+        res.status(500).json({ success: false, error: err.message });
     }
 });
 
