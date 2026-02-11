@@ -259,9 +259,13 @@ function writeEngineers(list) {
     return normalized;
 }
 
-function findEngineerIndex(list, name) {
-    const target = String(name || '').trim().toLowerCase();
-    return list.findIndex(e => String(e.name || '').trim().toLowerCase() === target);
+function findEngineerIndex(list, name, role) {
+    const targetName = String(name || '').trim().toLowerCase();
+    const targetRole = String(role || '').trim().toLowerCase();
+    return list.findIndex(e =>
+        String(e.name || '').trim().toLowerCase() === targetName &&
+        String(e.role || '').trim().toLowerCase() === targetRole
+    );
 }
 
 app.get('/api/engineers', (req, res) => {
@@ -275,7 +279,7 @@ app.post('/api/engineers', (req, res) => {
         return res.status(400).json({ success: false, error: 'Engineer name is required.' });
     }
     const list = readEngineers();
-    const idx = findEngineerIndex(list, payload.name);
+    const idx = findEngineerIndex(list, payload.name, payload.role);
     if (idx >= 0) {
         list[idx] = { ...list[idx], ...payload, name: list[idx].name };
     } else {
@@ -287,11 +291,17 @@ app.post('/api/engineers', (req, res) => {
 
 app.delete('/api/engineers/:name', (req, res) => {
     const name = String(req.params.name || '').trim();
+    const role = String(req.query.role || '').trim();
     if (!name) {
         return res.status(400).json({ success: false, error: 'Engineer name is required.' });
     }
     const list = readEngineers();
-    const filtered = list.filter(item => String(item.name || '').trim().toLowerCase() !== name.toLowerCase());
+    const filtered = role
+        ? list.filter(item =>
+            !(String(item.name || '').trim().toLowerCase() === name.toLowerCase() &&
+              String(item.role || '').trim().toLowerCase() === role.toLowerCase()))
+        : list.filter(item => String(item.name || '').trim().toLowerCase() !== name.toLowerCase());
+
     if (filtered.length === list.length) {
         return res.status(404).json({ success: false, error: 'Engineer not found.' });
     }
