@@ -24,8 +24,10 @@ try {
 }
 
 const isAdmin = Boolean(sessionData?.isAdmin);
+const isSuperAdmin = Boolean(sessionData?.isSuperAdmin || sessionData?.role === "superadmin");
 window.DPWH_CURRENT_USER = sessionData || null;
 window.DPWH_IS_ADMIN = isAdmin;
+window.DPWH_IS_SUPERADMIN = isSuperAdmin;
 
 document.querySelectorAll("[data-admin-only]").forEach(el => {
   el.style.display = isAdmin ? "flex" : "none";
