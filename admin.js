@@ -1,5 +1,5 @@
 const USERS_KEY = "dpwh_users";
-const ADMIN_EMAIL = "krong0814@gmail.com";
+const ADMIN_EMAILS = ["krong0814@gmail.com", "lemuel.malinao@gmail.com"];
 const body = document.querySelector("body");
 const sidebar = body?.querySelector(".sidebar");
 const toggle = body?.querySelector(".toggle");
@@ -50,6 +50,11 @@ modeSwitch?.addEventListener("click", () => {
 
 function normalizeEmail(value) {
   return String(value || "").trim().toLowerCase();
+}
+
+function isAdminEmail(email) {
+  const normalized = normalizeEmail(email);
+  return ADMIN_EMAILS.some(admin => normalizeEmail(admin) === normalized);
 }
 
 function loadUsers() {
@@ -178,7 +183,7 @@ function renderSection(listEl, users, emptyText) {
 }
 
 function renderUsers() {
-  const users = loadUsers().filter(u => normalizeEmail(u.email) !== normalizeEmail(ADMIN_EMAIL));
+  const users = loadUsers().filter(u => !isAdminEmail(u.email));
   const normalized = users.map(u => ({
     ...u,
     status: u.status || "pending"
