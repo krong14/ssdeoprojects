@@ -1,4 +1,4 @@
-﻿const body = document.querySelector("body")
+const body = document.querySelector("body")
 const sidebar = body.querySelector(".sidebar")
 const toggle = body.querySelector(".toggle")
 const modeSwitch = body.querySelector(".toggle-switch")
@@ -374,7 +374,10 @@ tableBody?.addEventListener("click", (event) => {
   window.location.href = "projects.html";
 });
 
-window.addEventListener("DOMContentLoaded", fetchProjectsForDashboard);
+window.addEventListener("DOMContentLoaded", () => {
+  syncEngineersDirectory();
+  fetchProjectsForDashboard();
+});
 document.addEventListener("DOMContentLoaded", () => {
   document.querySelectorAll(".documents-monitoring .doc-item").forEach(item => {
     item.addEventListener("click", () => {
@@ -606,10 +609,26 @@ function formatMoneyDisplay(value) {
 }
 
 const engineersStorageKey = "engineersDirectory";
+const engineersApiBase = getApiBase();
+const engineersApiEndpoint = engineersApiBase ? `${engineersApiBase}/api/engineers` : "";
 const emptyMark = "\u2014";
 
 function normalizeNameKey(value) {
   return String(value || "").trim().toLowerCase();
+}
+
+async function syncEngineersDirectory() {
+  if (!engineersApiEndpoint) return;
+  try {
+    const res = await fetch(engineersApiEndpoint);
+    if (!res.ok) throw new Error(`Status ${res.status}`);
+    const data = await res.json();
+    if (Array.isArray(data?.engineers)) {
+      localStorage.setItem(engineersStorageKey, JSON.stringify(data.engineers));
+    }
+  } catch (err) {
+    console.warn("Engineer directory sync failed:", err);
+  }
 }
 
 function getEngineerDirectory() {
