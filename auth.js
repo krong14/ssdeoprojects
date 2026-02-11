@@ -1,6 +1,10 @@
 const USERS_KEY = "dpwh_users";
 const SESSION_KEY = "dpwh_current_user";
-const ADMIN_EMAILS = ["krong0814@gmail.com", "lemuel.malinao@gmail.com"];
+const ADMIN_EMAILS = [
+  "krong0814@gmail.com",
+  "lemuel.malinao@gmail.com",
+  "alanpancitojr@gmail.com"
+];
 
 function isAdminEmail(email) {
   const normalized = normalizeEmail(email);
