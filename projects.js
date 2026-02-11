@@ -2494,6 +2494,9 @@ const documentsSectionLabels = {
     qa: "Quality Assurance",
     contractor: "Contractor"
 };
+const documentDisplayLabels = {
+    Contract: "Contract Aggrement"
+};
 
 const documentsSectionDocs = {
     contracts: [
@@ -2569,7 +2572,7 @@ function renderDocuments(contractId) {
                 const item = document.createElement('div');
                 item.className = `document-item ${fileName ? 'doc-has-file' : 'doc-missing'}`;
 
-                const safeDoc = escapeHtml(doc);
+                const safeDoc = escapeHtml(documentDisplayLabels[doc] || doc);
                 const safeStatus = escapeHtml(fileName ? `File: ${fileName}` : 'No file uploaded');
                 const iconClass = fileName ? 'bx-check-circle' : 'bx-x-circle';
 
