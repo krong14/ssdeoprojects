@@ -883,6 +883,7 @@ const updateOverridesKey = "projectUpdates";
 const projectMetaKey = "projectMeta";
 const projectPowKey = "projectPow";
 const variationOrdersKey = "projectVariationOrders";
+const powApiEndpoint = apiBase ? `${apiBase}/api/pow` : "";
 
 function normalizeContractId(value) {
     return String(value || "").trim().toUpperCase();
@@ -987,23 +988,46 @@ function normalizePowItems(value) {
     return [];
 }
 
-function setProjectPowMulti(keys, powItems) {
+function normalizeVariationOrders(value) {
+    if (!Array.isArray(value)) return [];
+    if (value.length && !Array.isArray(value[0])) {
+        const one = normalizePowItems(value);
+        return one.length ? [one] : [];
+    }
+    return value
+        .map(items => normalizePowItems(items))
+        .filter(items => items.length);
+}
+
+function setProjectPowMulti(keys, powItems, options = {}) {
+    const syncRemote = options.syncRemote !== false;
     const all = loadProjectPow();
     const items = normalizePowItems(powItems);
+    const normalizedKeys = [];
     keys.forEach(rawKey => {
         const key = normalizeContractId(rawKey);
         if (!key) return;
         all[key] = items;
+        normalizedKeys.push(key);
     });
     saveProjectPow(all);
+    if (syncRemote) {
+        normalizedKeys.forEach(key => {
+            syncPowToRemote(key).catch(err => console.warn(`POW sync failed for ${key}:`, err));
+        });
+    }
 }
 
-function setProjectPow(contractId, powItems) {
+function setProjectPow(contractId, powItems, options = {}) {
+    const syncRemote = options.syncRemote !== false;
     const key = normalizeContractId(contractId);
     if (!key) return;
     const all = loadProjectPow();
     all[key] = normalizePowItems(powItems);
     saveProjectPow(all);
+    if (syncRemote) {
+        syncPowToRemote(key).catch(err => console.warn(`POW sync failed for ${key}:`, err));
+    }
 }
 
 function getProjectPow(contractId) {
@@ -1042,7 +1066,8 @@ function getVariationOrder(contractId) {
     return [];
 }
 
-function setVariationOrder(contractId, items) {
+function setVariationOrder(contractId, items, options = {}) {
+    const syncRemote = options.syncRemote !== false;
     const key = normalizeContractId(contractId);
     if (!key) return;
     const all = loadVariationOrders();
@@ -1052,6 +1077,55 @@ function setVariationOrder(contractId, items) {
         all[key] = normalizePowItems(items);
     }
     saveVariationOrders(all);
+    if (syncRemote) {
+        syncPowToRemote(key).catch(err => console.warn(`POW sync failed for ${key}:`, err));
+    }
+}
+
+async function fetchPowRemote(contractId) {
+    const key = normalizeContractId(contractId);
+    if (!powApiEndpoint || !key) return null;
+    const res = await fetch(`${powApiEndpoint}/${encodeURIComponent(key)}`);
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok || !data?.success) {
+        throw new Error(data?.error || "Failed to load Program of Works.");
+    }
+    return {
+        programWorks: normalizePowItems(data.programWorks),
+        variationOrders: normalizeVariationOrders(data.variationOrders || data.variationOrder || []),
+        updatedAt: data.updatedAt || ""
+    };
+}
+
+async function syncPowToRemote(contractId) {
+    const key = normalizeContractId(contractId);
+    if (!powApiEndpoint || !key) return;
+    const payload = {
+        programWorks: getProjectPow(key),
+        variationOrders: getVariationOrder(key)
+    };
+    const res = await fetch(`${powApiEndpoint}/${encodeURIComponent(key)}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload)
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok || !data?.success) {
+        throw new Error(data?.error || "Failed to save Program of Works.");
+    }
+}
+
+async function hydratePowFromRemote(contractId) {
+    const key = normalizeContractId(contractId);
+    if (!powApiEndpoint || !key) return false;
+    const remote = await fetchPowRemote(key);
+    const remotePow = normalizePowItems(remote?.programWorks);
+    const remoteVo = normalizeVariationOrders(remote?.variationOrders);
+    const hasRemote = remotePow.length > 0 || remoteVo.length > 0;
+    if (!hasRemote) return false;
+    setProjectPow(key, remotePow, { syncRemote: false });
+    setVariationOrder(key, remoteVo, { syncRemote: false });
+    return true;
 }
 
 function getOriginalPowForContract(contractId) {
@@ -1967,9 +2041,17 @@ tableBody.addEventListener("click", async (e) => {
     // Render documents for this contract
     try { renderDocuments(title); } catch (err) { console.warn('renderDocuments error', err); }
 
+    // Hydrate Program of Works from server first (if available)
+    const contractKey = row.dataset.contractId || title;
+    try {
+        await hydratePowFromRemote(contractKey);
+    } catch (err) {
+        console.warn("Remote POW load failed:", err);
+    }
+
     // Render program of works (fallback to stored POW if dataset is empty)
     try {
-        const fallbackPow = getProjectPow(row.dataset.contractId || title);
+        const fallbackPow = getProjectPow(contractKey);
         let pow = (currentDetailsData?.programWorks && currentDetailsData.programWorks.length)
             ? currentDetailsData.programWorks
             : [];
@@ -1986,11 +2068,10 @@ tableBody.addEventListener("click", async (e) => {
             row.dataset.programWorks = JSON.stringify(pow);
         }
         if (pow && pow.length) {
-            const contractKey = row.dataset.contractId || title;
             setProjectPowMulti([contractKey], pow);
         }
+        if (currentDetailsData) currentDetailsData.programWorks = normalizePowItems(pow);
         renderProgramOfWorks(pow || []);
-        const contractKey = row.dataset.contractId || title;
         renderVariationOrders(getVariationOrder(contractKey));
     } catch (err) {
         console.warn('renderProgramOfWorks error', err);
@@ -2034,7 +2115,7 @@ function collectRevisedExpirationDates() {
         .filter(Boolean);
 }
 
-openVariationOrderBtn?.addEventListener("click", () => {
+openVariationOrderBtn?.addEventListener("click", async () => {
     const perms = getProjectPermissions(getRowInCharge(updatingRow));
     if (!perms.canUpdate) {
         alert("You don't have permission to update this project.");
@@ -2047,6 +2128,11 @@ openVariationOrderBtn?.addEventListener("click", () => {
     if (!contractId) {
         alert("Missing contract ID.");
         return;
+    }
+    try {
+        await hydratePowFromRemote(contractId);
+    } catch (err) {
+        console.warn("Remote POW load failed:", err);
     }
     const existing = getVariationOrder(contractId);
     if (!existing.length) {
