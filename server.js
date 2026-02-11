@@ -12,7 +12,6 @@ const app = express();
 const PORT = Number(process.env.PORT) || 3000;
 const engineersFilePath = path.join(__dirname, 'engineers.json');
 const powFilePath = path.join(__dirname, 'pow-data.json');
-const OPENAI_API_KEY = process.env.OPENAI_API_KEY || "";
 
 // Wasabi (S3-compatible) storage config
 const WASABI_ACCESS_KEY_ID = process.env.WASABI_ACCESS_KEY_ID || '';
@@ -983,45 +982,6 @@ app.get('/api/get-projects', (req, res) => {
     } catch (error) {
         console.error('Error reading projects:', error);
         res.status(500).json({ success: false, error: error.message });
-    }
-});
-
-// Simple AI chat relay (uses OPENAI_API_KEY)
-app.post('/api/chat', async (req, res) => {
-    if (!OPENAI_API_KEY) {
-        return res.status(503).json({ success: false, error: 'Chat is not configured. Missing OPENAI_API_KEY.' });
-    }
-    const userMessage = String(req.body?.message || '').trim();
-    if (!userMessage) {
-        return res.status(400).json({ success: false, error: 'Message is required.' });
-    }
-    try {
-        const response = await fetch('https://api.openai.com/v1/chat/completions', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${OPENAI_API_KEY}`
-            },
-            body: JSON.stringify({
-                model: 'gpt-3.5-turbo',
-                messages: [
-                    { role: 'system', content: 'You are a helpful assistant for DPWH projects dashboard. Keep replies concise (<=80 words).' },
-                    { role: 'user', content: userMessage }
-                ],
-                temperature: 0.3,
-                max_tokens: 180
-            })
-        });
-        if (!response.ok) {
-            const text = await response.text();
-            return res.status(502).json({ success: false, error: 'Upstream error', detail: text });
-        }
-        const data = await response.json();
-        const content = data?.choices?.[0]?.message?.content || '';
-        res.json({ success: true, reply: content });
-    } catch (err) {
-        console.error('Chat error:', err);
-        res.status(500).json({ success: false, error: err.message });
     }
 });
 
