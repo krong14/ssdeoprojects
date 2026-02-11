@@ -186,10 +186,12 @@ async function upsertEngineerApi(engineer) {
   return null;
 }
 
-async function deleteEngineerApi(name) {
+async function deleteEngineerApi(payload) {
   if (!engineersApiEndpoint) return null;
+  const targetName = typeof payload === "string" ? payload : payload?.name;
+  const targetRole = typeof payload === "string" ? "" : (payload?.role || "");
   try {
-    const res = await fetch(`${engineersApiEndpoint}/${encodeURIComponent(name)}`, { method: "DELETE" });
+    const res = await fetch(`${engineersApiEndpoint}/${encodeURIComponent(targetName)}?role=${encodeURIComponent(targetRole)}`, { method: "DELETE" });
     if (!res.ok) throw new Error(`Status ${res.status}`);
     const data = await res.json();
     if (Array.isArray(data?.engineers)) {
@@ -323,7 +325,7 @@ function renderEngineers() {
         removeBtn.type = "button";
         removeBtn.textContent = "Remove";
         removeBtn.addEventListener("click", async () => {
-          await deleteEngineerApi(engineer.name);
+          await deleteEngineerApi({ name: engineer.name, role: engineer.role });
           renderEngineers();
         });
 
@@ -472,9 +474,11 @@ async function addEngineer() {
     await upsertEngineerApi({ name, role, phone, facebook, accreditation });
   } else {
     const list = loadEngineers();
-    const existingIndex = list.findIndex(item => item.name.toLowerCase() === name.toLowerCase());
+    const existingIndex = list.findIndex(item =>
+      item.name.toLowerCase() === name.toLowerCase() &&
+      (item.role || "").toLowerCase() === (role || "").toLowerCase()
+    );
     if (existingIndex >= 0) {
-      list[existingIndex].role = role || list[existingIndex].role;
       if (phone) list[existingIndex].phone = phone;
       if (facebook) list[existingIndex].facebook = facebook;
       if (accreditation) list[existingIndex].accreditation = accreditation;
