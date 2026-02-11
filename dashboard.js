@@ -564,6 +564,7 @@ tableBody?.addEventListener("click", (event) => {
 
 window.addEventListener("DOMContentLoaded", () => {
   syncEngineersDirectory();
+  attachDocumentsCardHoverLists();
   fetchProjectsForDashboard();
   attachNotificationBell();
   attachChat();
@@ -662,6 +663,54 @@ const sectionDocs = {
     "Quality Control Program (QCA-01)"
   ]
 };
+const monitoringDocDisplayLabels = {
+  Contract: "Contract Aggrement"
+};
+
+function getMonitoringDocLabel(docName) {
+  return monitoringDocDisplayLabels[docName] || docName;
+}
+
+function attachDocumentsCardHoverLists() {
+  const cards = document.querySelectorAll(".documents-monitoring .doc-item");
+  if (!cards.length) return;
+
+  cards.forEach((card) => {
+    card.querySelector(".doc-hover-tooltip")?.remove();
+
+    const isTotal = card.classList.contains("total");
+    const section = String(card.getAttribute("data-doc-section") || "").trim();
+
+    const tooltip = document.createElement("div");
+    tooltip.className = "doc-hover-tooltip";
+
+    const title = document.createElement("div");
+    title.className = "doc-hover-title";
+
+    const list = document.createElement("ul");
+    list.className = "doc-hover-list";
+
+    if (isTotal || !section) {
+      title.textContent = "Includes Sections";
+      ["Contracts", "Planning and Design", "Construction", "Quality Assurance", "Contractor"].forEach((name) => {
+        const li = document.createElement("li");
+        li.textContent = name;
+        list.appendChild(li);
+      });
+    } else {
+      title.textContent = "Required Documents";
+      (sectionDocs[section] || []).forEach((docName) => {
+        const li = document.createElement("li");
+        li.textContent = getMonitoringDocLabel(docName);
+        list.appendChild(li);
+      });
+    }
+
+    tooltip.appendChild(title);
+    tooltip.appendChild(list);
+    card.appendChild(tooltip);
+  });
+}
 
 function formatPercent(value) {
   const num = Number(value);
