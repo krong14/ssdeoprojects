@@ -100,8 +100,25 @@
 
     <!-- PAGE HEADER -->
     <div class="dashboard-header">
-      <h1>Dashboard</h1>
-      <p>DPWH Samar 2nd District Engineering Office</p>
+      <div class="title-block">
+        <h1>Dashboard</h1>
+        <p>DPWH Samar 2nd District Engineering Office</p>
+      </div>
+      <div class="header-actions">
+        <button class="notif-btn" id="notifBtn" aria-label="Notifications">
+          <i class='bx bx-bell'></i>
+          <span class="notif-badge" id="notifBadge">0</span>
+        </button>
+        <div class="notif-panel" id="notifPanel">
+          <div class="notif-panel-header">
+            <span>Notifications</span>
+            <button type="button" id="notifClear" class="notif-clear">Clear</button>
+          </div>
+          <div class="notif-list" id="notifList">
+            <div class="notif-empty">No notifications yet.</div>
+          </div>
+        </div>
+      </div>
     </div>
 
     <!-- SUMMARY CARDS -->
@@ -626,6 +643,8 @@
   <script src="config.js"></script>
   <script src="dashboard.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+
+  <div id="toastContainer" class="toast-container"></div>
 
   <!-- PHOTO DETAILS MODAL -->
   <div class="modal-overlay" id="photoModal">
