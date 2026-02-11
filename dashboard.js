@@ -997,6 +997,7 @@ function renderEngineerDetails(containerId, engineerName, directory) {
 
 const projectPowKey = "projectPow";
 const variationOrdersKey = "projectVariationOrders";
+const powApiEndpoint = apiBase ? `${apiBase}/api/pow` : "";
 
 function normalizePowItems(value) {
   if (!value) return [];
@@ -1056,6 +1057,22 @@ function getVariationOrders(contractId) {
   }
 }
 
+async function fetchPowRemote(contractId) {
+  const key = String(contractId || "").trim().toUpperCase();
+  if (!powApiEndpoint || !key) return null;
+  const res = await fetch(`${powApiEndpoint}/${encodeURIComponent(key)}`);
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok || !data?.success) {
+    throw new Error(data?.error || "Failed to load Program of Works.");
+  }
+  return {
+    programWorks: normalizePowItems(data.programWorks),
+    variationOrders: Array.isArray(data.variationOrders)
+      ? data.variationOrders.map(items => normalizePowItems(items)).filter(items => items.length)
+      : []
+  };
+}
+
 function renderPowTableReadOnly(container, items = []) {
   if (!container) return;
   if (!Array.isArray(items) || items.length === 0) {
@@ -1076,13 +1093,41 @@ function renderPowTableReadOnly(container, items = []) {
   `).join("");
 }
 
-function renderPowDashboard(contractId) {
+async function renderPowDashboard(contractId) {
   const body = document.getElementById("powDetailsBodyDash");
   const variationContainer = document.getElementById("powVariationContainerDash");
-  const original = getProjectPow(contractId);
+  let original = getProjectPow(contractId);
+  let orders = getVariationOrders(contractId);
+
+  if (powApiEndpoint) {
+    try {
+      const remote = await fetchPowRemote(contractId);
+      const remoteOriginal = normalizePowItems(remote?.programWorks);
+      const remoteOrders = Array.isArray(remote?.variationOrders) ? remote.variationOrders : [];
+      if (remoteOriginal.length || remoteOrders.length) {
+        original = remoteOriginal;
+        orders = remoteOrders;
+        const key = String(contractId || "").trim().toUpperCase();
+        if (key) {
+          try {
+            const powStore = JSON.parse(localStorage.getItem(projectPowKey) || "{}");
+            powStore[key] = remoteOriginal;
+            localStorage.setItem(projectPowKey, JSON.stringify(powStore));
+            const voStore = JSON.parse(localStorage.getItem(variationOrdersKey) || "{}");
+            voStore[key] = remoteOrders;
+            localStorage.setItem(variationOrdersKey, JSON.stringify(voStore));
+          } catch (err) {
+            console.warn("Failed to cache remote POW locally:", err);
+          }
+        }
+      }
+    } catch (err) {
+      console.warn("Remote POW load failed:", err);
+    }
+  }
+
   renderPowTableReadOnly(body, original);
 
-  const orders = getVariationOrders(contractId);
   if (!variationContainer) return;
   if (!orders.length) {
     variationContainer.innerHTML = "";
