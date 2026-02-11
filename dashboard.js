@@ -60,6 +60,7 @@ const currentUser = getCurrentUser();
 const currentUserName = String(currentUser?.name || "").trim();
 const isAdminUser = Boolean(currentUser?.isAdmin);
 const NOTIF_PREFIX = "dpwh_notifications_";
+const chatApiEndpoint = apiBase ? `${apiBase}/api/chat` : "";
 
 function getNotificationKey() {
   const email = String(currentUser?.email || "guest").trim().toLowerCase();
@@ -147,6 +148,70 @@ function attachNotificationBell() {
     }
   });
   renderNotificationBell();
+}
+
+// Chat assistant
+function appendChatMessage(text, role = "bot") {
+  const body = document.getElementById("chatBody");
+  if (!body) return;
+  const el = document.createElement("div");
+  el.className = `chat-message ${role}`;
+  el.textContent = text;
+  body.appendChild(el);
+  body.scrollTop = body.scrollHeight;
+}
+
+async function sendChatMessage(message) {
+  if (!message) return;
+  appendChatMessage(message, "user");
+  const thinkingId = `thinking-${Date.now()}`;
+  appendChatMessage("Thinking...", "bot");
+  const body = document.getElementById("chatBody");
+  const thinkingEl = body?.lastElementChild;
+
+  if (!chatApiEndpoint) {
+    if (thinkingEl) thinkingEl.textContent = "Chat server not configured.";
+    return;
+  }
+
+  try {
+    const res = await fetch(chatApiEndpoint, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ message })
+    });
+    const data = await res.json();
+    if (thinkingEl) thinkingEl.remove();
+    if (!data.success) {
+      appendChatMessage(data.error || "Error from chat server.", "bot");
+      return;
+    }
+    appendChatMessage(data.reply || "No reply.", "bot");
+  } catch (err) {
+    if (thinkingEl) thinkingEl.remove();
+    appendChatMessage("Network error. Please try again.", "bot");
+  }
+}
+
+function attachChat() {
+  const fab = document.getElementById("chatFab");
+  const win = document.getElementById("chatWindow");
+  const closeBtn = document.getElementById("chatClose");
+  const form = document.getElementById("chatForm");
+  const input = document.getElementById("chatInput");
+  if (!fab || !win || !form || !input) return;
+
+  const toggle = () => win.classList.toggle("open");
+  fab.addEventListener("click", toggle);
+  closeBtn?.addEventListener("click", () => win.classList.remove("open"));
+
+  form.addEventListener("submit", (e) => {
+    e.preventDefault();
+    const msg = input.value.trim();
+    if (!msg) return;
+    input.value = "";
+    sendChatMessage(msg);
+  });
 }
 
 function ensureToastContainer() {
@@ -501,6 +566,7 @@ window.addEventListener("DOMContentLoaded", () => {
   syncEngineersDirectory();
   fetchProjectsForDashboard();
   attachNotificationBell();
+  attachChat();
 });
 document.addEventListener("DOMContentLoaded", () => {
   document.querySelectorAll(".documents-monitoring .doc-item").forEach(item => {
@@ -1421,9 +1487,26 @@ const documentsSectionLabels = {
   contracts: "Contracts",
   planning: "Planning and Design",
   construction: "Construction",
-  qa: "Quality Assurance",
+  qa: "QAS",
   contractor: "Contractor"
 };
+const documentsTotalProgressEl = document.getElementById("documentsTotalProgress");
+
+function hasUploadedDocument(entry) {
+  if (!entry) return false;
+  return Boolean(entry.fileName || entry.name || entry.url);
+}
+
+function setDocumentsTotalProgress(done, total) {
+  if (!documentsTotalProgressEl) return;
+  if (!Number.isFinite(done) || !Number.isFinite(total) || total <= 0) {
+    documentsTotalProgressEl.textContent = "Total Documents Uploaded: 0% (0/0)";
+    return;
+  }
+  const percent = (done / total) * 100;
+  documentsTotalProgressEl.textContent =
+    `Total Documents Uploaded: ${formatPercent(percent)} (${done}/${total})`;
+}
 
 function renderDocuments(contractId) {
   const container = document.getElementById("documentsContainer");
@@ -1433,27 +1516,50 @@ function renderDocuments(contractId) {
   container.innerHTML = "";
 
   if (!key) {
+    setDocumentsTotalProgress(0, 0);
     container.innerHTML = `<div class="empty-state">No contract selected.</div>`;
     return;
   }
 
   const renderWithIndex = (index = {}) => {
     container.innerHTML = "";
+    let totalDocs = 0;
+    let uploadedDocs = 0;
+
     Object.entries(sectionDocs).forEach(([section, docs]) => {
+      const sectionTotal = docs.length;
+      let sectionUploaded = 0;
+
+      docs.forEach(doc => {
+        const entry = index?.[section]?.[doc] || null;
+        if (hasUploadedDocument(entry)) sectionUploaded += 1;
+      });
+
+      const sectionPercent = sectionTotal ? (sectionUploaded / sectionTotal) * 100 : 0;
+      totalDocs += sectionTotal;
+      uploadedDocs += sectionUploaded;
+
       const header = document.createElement("div");
       header.className = "document-section-title";
-      header.textContent = documentsSectionLabels[section] || section;
+      header.innerHTML = `
+        <span class="document-section-name">${escapeHtml(documentsSectionLabels[section] || section)}</span>
+        <span class="document-section-progress">${formatPercent(sectionPercent)} (${sectionUploaded}/${sectionTotal})</span>
+      `;
       container.appendChild(header);
 
       docs.forEach(doc => {
         const entry = index?.[section]?.[doc] || null;
         const fileName = entry?.fileName || entry?.name || "";
+        const isUploaded = hasUploadedDocument(entry);
         const item = document.createElement("div");
-        item.className = `document-item ${fileName ? "doc-has-file" : "doc-missing"}`;
+        item.className = `document-item ${isUploaded ? "doc-has-file" : "doc-missing"}`;
 
         const safeDoc = escapeHtml(doc);
-        const safeStatus = escapeHtml(fileName ? `File: ${fileName}` : "No file uploaded");
-        const iconClass = fileName ? "bx-check-circle" : "bx-x-circle";
+        const statusText = fileName
+          ? `File: ${fileName}`
+          : (isUploaded ? "Uploaded file" : "No file uploaded");
+        const safeStatus = escapeHtml(statusText);
+        const iconClass = isUploaded ? "bx-check-circle" : "bx-x-circle";
 
         item.innerHTML = `
           <div class="document-item-left">
@@ -1479,9 +1585,14 @@ function renderDocuments(contractId) {
         container.appendChild(item);
       });
     });
+
+    setDocumentsTotalProgress(uploadedDocs, totalDocs);
   };
 
   if (useRemoteStorage) {
+    if (documentsTotalProgressEl) {
+      documentsTotalProgressEl.textContent = "Total Documents Uploaded: Loading...";
+    }
     container.innerHTML = `<div class="empty-state">Loading documents...</div>`;
     fetch(`${apiBase}/api/documents/${encodeURIComponent(key)}`)
       .then(res => res.json())
@@ -1495,6 +1606,7 @@ function renderDocuments(contractId) {
         renderWithIndex(index);
       })
       .catch(() => {
+        setDocumentsTotalProgress(0, 0);
         container.innerHTML = `<div class="empty-state">Failed to load documents.</div>`;
       });
     return;
