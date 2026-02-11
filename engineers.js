@@ -5,6 +5,8 @@ const modeSwitch = body.querySelector(".toggle-switch");
 const modeText = body.querySelector(".mode-text");
 const sidebarStateKey = "sidebarOpen";
 const themeStateKey = "darkMode";
+const apiBase = window.DPWH_API_BASE || "";
+const engineersApiEndpoint = apiBase ? `${apiBase}/api/engineers` : "";
 
 const applySidebarState = () => {
   if (!sidebar) return;
@@ -92,6 +94,7 @@ const accreditationInput = document.getElementById("engineerAccreditation");
 const addBtn = document.getElementById("addEngineerBtn");
 const listEl = document.getElementById("engineerList");
 const countEl = document.getElementById("engineerCount");
+const loadingEl = document.getElementById("engineerLoading");
 
 function normalizeName(name) {
   return String(name || "").trim();
@@ -144,6 +147,67 @@ function loadEngineers() {
 
 function saveEngineers(list) {
   localStorage.setItem(engineersStorageKey, JSON.stringify(list));
+}
+
+async function fetchEngineersFromApi() {
+  if (!engineersApiEndpoint) return null;
+  try {
+    const res = await fetch(engineersApiEndpoint);
+    if (!res.ok) throw new Error(`Status ${res.status}`);
+    const data = await res.json();
+    if (Array.isArray(data?.engineers)) {
+      saveEngineers(data.engineers);
+      return data.engineers;
+    }
+  } catch (err) {
+    console.warn("Engineers fetch failed:", err);
+  }
+  return null;
+}
+
+async function upsertEngineerApi(engineer) {
+  if (!engineersApiEndpoint) return null;
+  try {
+    const res = await fetch(engineersApiEndpoint, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(engineer)
+    });
+    if (!res.ok) throw new Error(`Status ${res.status}`);
+    const data = await res.json();
+    if (Array.isArray(data?.engineers)) {
+      saveEngineers(data.engineers);
+      return data.engineers;
+    }
+  } catch (err) {
+    console.error("Engineer save failed:", err);
+    alert("Failed to save engineer. Please try again.");
+  }
+  return null;
+}
+
+async function deleteEngineerApi(name) {
+  if (!engineersApiEndpoint) return null;
+  try {
+    const res = await fetch(`${engineersApiEndpoint}/${encodeURIComponent(name)}`, { method: "DELETE" });
+    if (!res.ok) throw new Error(`Status ${res.status}`);
+    const data = await res.json();
+    if (Array.isArray(data?.engineers)) {
+      saveEngineers(data.engineers);
+      return data.engineers;
+    }
+  } catch (err) {
+    console.error("Engineer delete failed:", err);
+    alert("Failed to delete engineer. Please try again.");
+  }
+  return null;
+}
+
+async function syncEngineers(renderAfter = true) {
+  if (loadingEl) loadingEl.style.display = "block";
+  await fetchEngineersFromApi();
+  if (loadingEl) loadingEl.style.display = "none";
+  if (renderAfter) renderEngineers();
 }
 
 function updateCount(count) {
@@ -244,14 +308,10 @@ function renderEngineers() {
           accAdd.type = "button";
           accAdd.className = "inline-add";
           accAdd.textContent = "Add";
-          accAdd.addEventListener("click", () => {
+          accAdd.addEventListener("click", async () => {
             const value = prompt("Enter accreditation number:");
             if (!value) return;
-            const updated = loadEngineers().map(entry => {
-              if (entry.name !== engineer.name) return entry;
-              return { ...entry, accreditation: String(value).trim() };
-            });
-            saveEngineers(updated);
+            await upsertEngineerApi({ ...engineer, accreditation: String(value).trim() });
             renderEngineers();
           });
           accreditation.appendChild(accAdd);
@@ -262,9 +322,8 @@ function renderEngineers() {
         removeBtn.className = "engineer-action";
         removeBtn.type = "button";
         removeBtn.textContent = "Remove";
-        removeBtn.addEventListener("click", () => {
-          const updated = loadEngineers().filter(entry => entry.name !== engineer.name);
-          saveEngineers(updated);
+        removeBtn.addEventListener("click", async () => {
+          await deleteEngineerApi(engineer.name);
           renderEngineers();
         });
 
@@ -363,14 +422,10 @@ function renderEngineers() {
         const setupAdd = (wrap, label, key) => {
           const addBtn = wrap.querySelector(".tooltip-add");
           if (!addBtn) return;
-          addBtn.addEventListener("click", () => {
+          addBtn.addEventListener("click", async () => {
             const value = prompt(`Enter ${label}:`);
             if (!value) return;
-            const updated = loadEngineers().map(entry => {
-              if (entry.name !== engineer.name) return entry;
-              return { ...entry, [key]: String(value).trim() };
-            });
-            saveEngineers(updated);
+            await upsertEngineerApi({ ...engineer, [key]: String(value).trim() });
             renderEngineers();
           });
         };
@@ -399,7 +454,7 @@ function renderEngineers() {
   });
 }
 
-function addEngineer() {
+async function addEngineer() {
   const name = normalizeName(nameInput?.value);
   if (!name) {
     alert("Please enter an engineer name.");
@@ -413,19 +468,22 @@ function addEngineer() {
   const phone = String(phoneInput?.value || "").trim();
   const facebook = String(facebookInput?.value || "").trim();
   const accreditation = String(accreditationInput?.value || "").trim();
-  const list = loadEngineers();
-  const existingIndex = list.findIndex(item => item.name.toLowerCase() === name.toLowerCase());
-
-  if (existingIndex >= 0) {
-    list[existingIndex].role = role || list[existingIndex].role;
-    if (phone) list[existingIndex].phone = phone;
-    if (facebook) list[existingIndex].facebook = facebook;
-    if (accreditation) list[existingIndex].accreditation = accreditation;
+  if (engineersApiEndpoint) {
+    await upsertEngineerApi({ name, role, phone, facebook, accreditation });
   } else {
-    list.push({ name, role, phone, facebook, accreditation });
+    const list = loadEngineers();
+    const existingIndex = list.findIndex(item => item.name.toLowerCase() === name.toLowerCase());
+    if (existingIndex >= 0) {
+      list[existingIndex].role = role || list[existingIndex].role;
+      if (phone) list[existingIndex].phone = phone;
+      if (facebook) list[existingIndex].facebook = facebook;
+      if (accreditation) list[existingIndex].accreditation = accreditation;
+    } else {
+      list.push({ name, role, phone, facebook, accreditation });
+    }
+    saveEngineers(list);
   }
 
-  saveEngineers(list);
   if (nameInput) nameInput.value = "";
   if (roleInput) roleInput.value = "";
   if (phoneInput) phoneInput.value = "";
@@ -442,4 +500,4 @@ nameInput?.addEventListener("keydown", (event) => {
   }
 });
 
-renderEngineers();
+syncEngineers();
