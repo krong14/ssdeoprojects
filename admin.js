@@ -1,6 +1,9 @@
 const USERS_KEY = "dpwh_users";
+const SUPERADMIN_EMAILS = [
+  "krong0814@gmail.com"
+];
 const ADMIN_EMAILS = [
-  "krong0814@gmail.com",
+  ...SUPERADMIN_EMAILS,
   "lemuel.malinao@gmail.com",
   "alanpancitojr@gmail.com"
 ];
@@ -61,6 +64,11 @@ function isAdminEmail(email) {
   return ADMIN_EMAILS.some(admin => normalizeEmail(admin) === normalized);
 }
 
+function isSuperAdminEmail(email) {
+  const normalized = normalizeEmail(email);
+  return SUPERADMIN_EMAILS.some(admin => normalizeEmail(admin) === normalized);
+}
+
 function loadUsers() {
   const raw = localStorage.getItem(USERS_KEY);
   if (!raw) return [];
@@ -77,6 +85,7 @@ function saveUsers(list) {
 }
 
 function updateUserStatus(email, status) {
+  if (isSuperAdminEmail(email)) return;
   const users = loadUsers();
   const idx = users.findIndex(u => normalizeEmail(u.email) === normalizeEmail(email));
   if (idx === -1) return;
@@ -87,6 +96,7 @@ function updateUserStatus(email, status) {
 }
 
 function deleteUser(email) {
+  if (isSuperAdminEmail(email)) return;
   const users = loadUsers();
   const filtered = users.filter(u => normalizeEmail(u.email) !== normalizeEmail(email));
   saveUsers(filtered);
