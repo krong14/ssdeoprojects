@@ -1487,7 +1487,7 @@ const documentsSectionLabels = {
   contracts: "Contracts",
   planning: "Planning and Design",
   construction: "Construction",
-  qa: "QAS",
+  qa: "Quality Assurance",
   contractor: "Contractor"
 };
 const documentsTotalProgressEl = document.getElementById("documentsTotalProgress");
@@ -2047,3 +2047,4 @@ document.addEventListener('DOMContentLoaded', () => {
     if (e.key === 'ArrowRight') showGalleryPhoto(currentGalleryIndex + 1);
   });
 });
+
