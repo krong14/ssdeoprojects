@@ -59,6 +59,128 @@ function getCurrentUser() {
 const currentUser = getCurrentUser();
 const currentUserName = String(currentUser?.name || "").trim();
 const isAdminUser = Boolean(currentUser?.isAdmin);
+const NOTIF_PREFIX = "dpwh_notifications_";
+
+function getNotificationKey() {
+  const email = String(currentUser?.email || "guest").trim().toLowerCase();
+  return `${NOTIF_PREFIX}${email || "guest"}`;
+}
+
+function loadNotifications() {
+  const raw = localStorage.getItem(getNotificationKey());
+  if (!raw) return [];
+  try {
+    const parsed = JSON.parse(raw);
+    return Array.isArray(parsed) ? parsed : [];
+  } catch (err) {
+    return [];
+  }
+}
+
+function saveNotifications(list) {
+  localStorage.setItem(getNotificationKey(), JSON.stringify(list));
+}
+
+function formatTimeAgo(value) {
+  if (!value) return "";
+  const ts = new Date(value).getTime();
+  if (Number.isNaN(ts)) return "";
+  const diff = Date.now() - ts;
+  const mins = Math.floor(diff / 60000);
+  if (mins < 1) return "just now";
+  if (mins < 60) return `${mins}m ago`;
+  const hours = Math.floor(mins / 60);
+  if (hours < 24) return `${hours}h ago`;
+  const days = Math.floor(hours / 24);
+  return `${days}d ago`;
+}
+
+function renderNotificationBell() {
+  const list = loadNotifications();
+  const badge = document.getElementById("notifBadge");
+  const panel = document.getElementById("notifPanel");
+  const listEl = document.getElementById("notifList");
+  if (badge) {
+    badge.textContent = list.length;
+    badge.style.display = list.length ? "inline-flex" : "none";
+  }
+  if (!panel || !listEl) return;
+  listEl.innerHTML = "";
+  if (!list.length) {
+    const empty = document.createElement("div");
+    empty.className = "notif-empty";
+    empty.textContent = "No notifications yet.";
+    listEl.appendChild(empty);
+    return;
+  }
+  list.forEach(item => {
+    const row = document.createElement("div");
+    row.className = "notif-item";
+    const title = document.createElement("div");
+    title.className = "notif-title";
+    title.textContent = item.message || "Notification";
+    const time = document.createElement("div");
+    time.className = "notif-time";
+    time.textContent = formatTimeAgo(item.createdAt);
+    row.appendChild(title);
+    row.appendChild(time);
+    listEl.appendChild(row);
+  });
+}
+
+function attachNotificationBell() {
+  const btn = document.getElementById("notifBtn");
+  const panel = document.getElementById("notifPanel");
+  const clearBtn = document.getElementById("notifClear");
+  if (!btn || !panel) return;
+  btn.addEventListener("click", (e) => {
+    e.stopPropagation();
+    panel.classList.toggle("open");
+  });
+  clearBtn?.addEventListener("click", () => {
+    saveNotifications([]);
+    renderNotificationBell();
+  });
+  document.addEventListener("click", (e) => {
+    if (!panel.contains(e.target) && e.target !== btn) {
+      panel.classList.remove("open");
+    }
+  });
+  renderNotificationBell();
+}
+
+function ensureToastContainer() {
+  let container = document.getElementById("toastContainer");
+  if (container) return container;
+  container = document.createElement("div");
+  container.id = "toastContainer";
+  container.className = "toast-container";
+  document.body.appendChild(container);
+  return container;
+}
+
+function showToast(message, type = "info") {
+  const container = ensureToastContainer();
+  const toast = document.createElement("div");
+  toast.className = `toast ${type}`;
+  toast.textContent = message;
+  container.appendChild(toast);
+  requestAnimationFrame(() => toast.classList.add("show"));
+  setTimeout(() => {
+    toast.classList.remove("show");
+    setTimeout(() => toast.remove(), 260);
+  }, 3200);
+
+  // Also log into notification list
+  const list = loadNotifications();
+  list.unshift({
+    id: `${Date.now()}-${Math.random().toString(16).slice(2, 8)}`,
+    message,
+    createdAt: new Date().toISOString()
+  });
+  saveNotifications(list.slice(0, 30));
+  renderNotificationBell();
+}
 
 function normalizePersonName(value) {
   return String(value || "").trim().toLowerCase();
@@ -361,6 +483,7 @@ async function fetchProjectsForDashboard() {
     applyDashboardFilters();
   } catch (err) {
     console.warn("Could not load projects:", err);
+    showToast("Could not load projects data.", "error");
     updateProjectStats([]);
     updateDocMonitoringStats([]);
     updateContractsCount();
@@ -377,6 +500,7 @@ tableBody?.addEventListener("click", (event) => {
 window.addEventListener("DOMContentLoaded", () => {
   syncEngineersDirectory();
   fetchProjectsForDashboard();
+  attachNotificationBell();
 });
 document.addEventListener("DOMContentLoaded", () => {
   document.querySelectorAll(".documents-monitoring .doc-item").forEach(item => {
@@ -516,7 +640,10 @@ function updateDocMonitoringStats(projects) {
           if (ring) ring.style.setProperty("--progress", Math.max(0, Math.min(100, percent)).toFixed(1));
         });
       })
-      .catch(err => console.warn("Doc summary fetch failed:", err));
+      .catch(err => {
+        console.warn("Doc summary fetch failed:", err);
+        showToast("Document summary failed to load.", "error");
+      });
     return;
   }
 
