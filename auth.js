@@ -1,10 +1,18 @@
 const USERS_KEY = "dpwh_users";
 const SESSION_KEY = "dpwh_current_user";
+const SUPERADMIN_EMAILS = [
+  "krong0814@gmail.com"
+];
 const ADMIN_EMAILS = [
-  "krong0814@gmail.com",
+  ...SUPERADMIN_EMAILS,
   "lemuel.malinao@gmail.com",
   "alanpancitojr@gmail.com"
 ];
+
+function isSuperAdminEmail(email) {
+  const normalized = normalizeEmail(email);
+  return SUPERADMIN_EMAILS.some(admin => normalizeEmail(admin) === normalized);
+}
 
 function isAdminEmail(email) {
   const normalized = normalizeEmail(email);
@@ -26,6 +34,47 @@ function saveUsers(list) {
   localStorage.setItem(USERS_KEY, JSON.stringify(list));
 }
 
+function ensureSuperAdminUser() {
+  const users = loadUsers();
+  const now = new Date().toISOString();
+  let changed = false;
+
+  SUPERADMIN_EMAILS.forEach((email) => {
+    const normalizedEmail = normalizeEmail(email);
+    const idx = users.findIndex(u => normalizeEmail(u?.email) === normalizedEmail);
+    if (idx === -1) {
+      users.push({
+        name: "Super Admin",
+        email: normalizedEmail,
+        section: "Administration",
+        password: "",
+        status: "approved",
+        role: "superadmin",
+        createdAt: now,
+        updatedAt: now
+      });
+      changed = true;
+      return;
+    }
+
+    const existing = users[idx] || {};
+    const nextRole = "superadmin";
+    const nextStatus = "approved";
+    if (existing.role !== nextRole || existing.status !== nextStatus) {
+      users[idx] = {
+        ...existing,
+        email: normalizedEmail,
+        role: nextRole,
+        status: nextStatus,
+        updatedAt: now
+      };
+      changed = true;
+    }
+  });
+
+  if (changed) saveUsers(users);
+}
+
 function setMessage(el, msg, type = "error") {
   if (!el) return;
   el.textContent = msg;
@@ -44,11 +93,15 @@ function normalizeEmail(value) {
 }
 
 function storeSession(user, remember) {
+  const isSuperAdmin = isSuperAdminEmail(user.email);
+  const isAdmin = isSuperAdmin || isAdminEmail(user.email);
   const payload = {
     email: user.email,
     name: user.name,
     section: user.section,
-    isAdmin: isAdminEmail(user.email),
+    role: isSuperAdmin ? "superadmin" : (isAdmin ? "admin" : "user"),
+    isAdmin,
+    isSuperAdmin,
     loginAt: new Date().toISOString()
   };
   const json = JSON.stringify(payload);
@@ -85,7 +138,8 @@ function initLogin() {
       setMessage(messageEl, "Invalid email or password.");
       return;
     }
-    const isAdmin = isAdminEmail(user.email);
+    const isSuperAdmin = isSuperAdminEmail(user.email);
+    const isAdmin = isSuperAdmin || isAdminEmail(user.email);
     if (!isAdmin) {
       const status = user.status || "pending";
       if (status !== "approved") {
@@ -95,8 +149,9 @@ function initLogin() {
         setMessage(messageEl, msg);
         return;
       }
-    } else if (!user.status || user.status !== "approved") {
+    } else if (!user.status || user.status !== "approved" || (isSuperAdmin && user.role !== "superadmin")) {
       user.status = "approved";
+      if (isSuperAdmin) user.role = "superadmin";
       saveUsers(users);
     }
 
@@ -144,12 +199,14 @@ function initSignup() {
       return;
     }
 
-    const isAdmin = isAdminEmail(email);
+    const isSuperAdmin = isSuperAdminEmail(email);
+    const isAdmin = isSuperAdmin || isAdminEmail(email);
     const user = {
       name,
       email,
       section,
       password,
+      role: isSuperAdmin ? "superadmin" : (isAdmin ? "admin" : "user"),
       status: isAdmin ? "approved" : "pending",
       createdAt: new Date().toISOString()
     };
@@ -157,7 +214,11 @@ function initSignup() {
     saveUsers(users);
     if (isAdmin) {
       storeSession(user, true);
-      setMessage(messageEl, "Admin account created. Redirecting...", "success");
+      setMessage(
+        messageEl,
+        isSuperAdmin ? "Superadmin account created. Redirecting..." : "Admin account created. Redirecting...",
+        "success"
+      );
       setTimeout(() => {
         window.location.href = "dashboard.html";
       }, 800);
@@ -215,6 +276,7 @@ function initForgot() {
 }
 
 document.addEventListener("DOMContentLoaded", () => {
+  ensureSuperAdminUser();
   const page = document.body.getAttribute("data-page");
   if (page === "login") initLogin();
   if (page === "signup") initSignup();
