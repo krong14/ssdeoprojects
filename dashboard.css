@@ -825,6 +825,8 @@ body.dark .switch::before {
   border: 1px solid #e2e8f0;
   transition: box-shadow 0.2s ease, border-color 0.2s ease;
   cursor: pointer;
+  position: relative;
+  overflow: visible;
 }
 
 body.dark .doc-item {
@@ -968,6 +970,53 @@ body.dark .doc-ring::after {
 .doc-item:hover {
   border-color: rgba(148, 163, 184, 0.6);
   box-shadow: 0 8px 18px rgba(15, 23, 42, 0.12);
+}
+
+.doc-hover-tooltip {
+  position: absolute;
+  left: 12px;
+  right: 12px;
+  bottom: calc(100% + 10px);
+  background: #0f172a;
+  color: #e5e7eb;
+  border: 1px solid rgba(148, 163, 184, 0.35);
+  border-radius: 12px;
+  box-shadow: 0 16px 28px rgba(2, 6, 23, 0.35);
+  padding: 10px 12px;
+  z-index: 40;
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(6px);
+  transition: opacity 0.18s ease, transform 0.18s ease, visibility 0.18s ease;
+  pointer-events: none;
+}
+
+.doc-item:hover .doc-hover-tooltip,
+.doc-item:focus-within .doc-hover-tooltip {
+  opacity: 1;
+  visibility: visible;
+  transform: translateY(0);
+}
+
+.doc-hover-title {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #94a3b8;
+  margin-bottom: 6px;
+}
+
+.doc-hover-list {
+  margin: 0;
+  padding-left: 16px;
+  display: grid;
+  gap: 3px;
+}
+
+.doc-hover-list li {
+  font-size: 12px;
+  line-height: 1.35;
 }
 
 
