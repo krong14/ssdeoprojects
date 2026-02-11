@@ -10,6 +10,7 @@ const { getSignedUrl } = require('@aws-sdk/s3-request-presigner');
 
 const app = express();
 const PORT = Number(process.env.PORT) || 3000;
+const engineersFilePath = path.join(__dirname, 'engineers.json');
 
 // Wasabi (S3-compatible) storage config
 const WASABI_ACCESS_KEY_ID = process.env.WASABI_ACCESS_KEY_ID || '';
@@ -227,6 +228,76 @@ function requireWasabi(req, res, next) {
     }
     next();
 }
+
+// ----------------------------------------------------------------------------------------------
+// Engineers directory (simple JSON persistence)
+// ----------------------------------------------------------------------------------------------
+function normalizeEngineer(entry) {
+    return {
+        name: String(entry?.name || '').trim(),
+        role: String(entry?.role || '').trim(),
+        phone: String(entry?.phone || '').trim(),
+        facebook: String(entry?.facebook || '').trim(),
+        accreditation: String(entry?.accreditation || '').trim()
+    };
+}
+
+function readEngineers() {
+    try {
+        const raw = fs.readFileSync(engineersFilePath, 'utf-8');
+        const parsed = JSON.parse(raw);
+        if (!Array.isArray(parsed)) return [];
+        return parsed.map(normalizeEngineer).filter(item => item.name);
+    } catch (err) {
+        return [];
+    }
+}
+
+function writeEngineers(list) {
+    const normalized = (Array.isArray(list) ? list : []).map(normalizeEngineer).filter(item => item.name);
+    fs.writeFileSync(engineersFilePath, JSON.stringify(normalized, null, 2));
+    return normalized;
+}
+
+function findEngineerIndex(list, name) {
+    const target = String(name || '').trim().toLowerCase();
+    return list.findIndex(e => String(e.name || '').trim().toLowerCase() === target);
+}
+
+app.get('/api/engineers', (req, res) => {
+    const engineers = readEngineers();
+    res.json({ success: true, engineers });
+});
+
+app.post('/api/engineers', (req, res) => {
+    const payload = normalizeEngineer(req.body || {});
+    if (!payload.name) {
+        return res.status(400).json({ success: false, error: 'Engineer name is required.' });
+    }
+    const list = readEngineers();
+    const idx = findEngineerIndex(list, payload.name);
+    if (idx >= 0) {
+        list[idx] = { ...list[idx], ...payload, name: list[idx].name };
+    } else {
+        list.push(payload);
+    }
+    const saved = writeEngineers(list);
+    res.json({ success: true, engineers: saved, total: saved.length });
+});
+
+app.delete('/api/engineers/:name', (req, res) => {
+    const name = String(req.params.name || '').trim();
+    if (!name) {
+        return res.status(400).json({ success: false, error: 'Engineer name is required.' });
+    }
+    const list = readEngineers();
+    const filtered = list.filter(item => String(item.name || '').trim().toLowerCase() !== name.toLowerCase());
+    if (filtered.length === list.length) {
+        return res.status(404).json({ success: false, error: 'Engineer not found.' });
+    }
+    const saved = writeEngineers(filtered);
+    res.json({ success: true, engineers: saved, total: saved.length });
+});
 
 // Initialize Excel file if it doesn't exist
 function initializeExcel() {
