@@ -588,6 +588,132 @@ body.dark .switch::before {
   padding: 14px 6px;
 }
 
+/* CHAT WIDGET */
+.chat-fab {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  width: 54px;
+  height: 54px;
+  border-radius: 50%;
+  background: #0b4da2;
+  color: #fff;
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+  box-shadow: 0 12px 26px rgba(0,0,0,0.25);
+  z-index: 1600;
+  transition: transform 0.15s ease, box-shadow 0.2s ease;
+}
+
+.chat-fab:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 14px 30px rgba(0,0,0,0.3);
+}
+
+.chat-fab i {
+  font-size: 26px;
+}
+
+.chat-window {
+  position: fixed;
+  bottom: 90px;
+  right: 24px;
+  width: 360px;
+  max-width: 90vw;
+  background: #0f172a;
+  color: #fff;
+  border-radius: 14px;
+  box-shadow: 0 18px 38px rgba(0,0,0,0.3);
+  border: 1px solid rgba(255,255,255,0.08);
+  display: none;
+  flex-direction: column;
+  overflow: hidden;
+  z-index: 1600;
+}
+
+.chat-window.open {
+  display: flex;
+}
+
+.chat-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 14px;
+  background: rgba(255,255,255,0.04);
+}
+
+.chat-sub {
+  font-size: 12px;
+  color: #cbd5e1;
+}
+
+.chat-close {
+  background: transparent;
+  border: none;
+  color: #fff;
+  font-size: 20px;
+  cursor: pointer;
+}
+
+.chat-body {
+  padding: 12px 14px;
+  max-height: 360px;
+  overflow-y: auto;
+  display: grid;
+  gap: 10px;
+}
+
+.chat-message {
+  padding: 10px 12px;
+  border-radius: 10px;
+  font-size: 13px;
+  line-height: 1.4;
+  max-width: 85%;
+}
+
+.chat-message.bot {
+  background: rgba(255,255,255,0.08);
+  border: 1px solid rgba(255,255,255,0.08);
+  color: #e5e7eb;
+}
+
+.chat-message.user {
+  background: #0b4da2;
+  color: #fff;
+  margin-left: auto;
+}
+
+.chat-footer {
+  display: flex;
+  gap: 8px;
+  padding: 12px 14px;
+  border-top: 1px solid rgba(255,255,255,0.08);
+}
+
+.chat-footer input {
+  flex: 1;
+  border: 1px solid rgba(255,255,255,0.12);
+  background: rgba(255,255,255,0.04);
+  color: #fff;
+  padding: 10px 12px;
+  border-radius: 10px;
+}
+
+.chat-footer button {
+  background: #0b4da2;
+  color: #fff;
+  border: none;
+  padding: 0 14px;
+  border-radius: 10px;
+  cursor: pointer;
+}
+
+.chat-footer button:hover {
+  background: #0a428f;
+}
+
 /* CARDS */
 .card-grid {
   display: grid;
@@ -2373,4 +2499,139 @@ body.dark .info-box {
 
 .photo-nav-btn:hover {
   background: rgba(15, 23, 42, 0.85);
+}
+
+@media (max-width: 980px) {
+  body {
+    height: auto;
+    min-height: 100vh;
+  }
+
+  .sidebar {
+    left: -260px;
+    width: 250px;
+    box-shadow: 0 12px 30px rgba(0, 0, 0, 0.22);
+    z-index: 1200;
+  }
+
+  .sidebar.close {
+    left: -260px;
+    width: 250px;
+  }
+
+  .sidebar:not(.close) {
+    left: 0;
+  }
+
+  .home,
+  .sidebar.close ~ .home {
+    left: 0;
+    width: 100%;
+  }
+
+  .dashboard-header,
+  .card-grid,
+  .documents-monitoring,
+  .dashboard-row {
+    padding-left: 16px;
+    padding-right: 16px;
+  }
+
+  .project-filter-bar {
+    margin-left: 16px;
+    margin-right: 16px;
+    padding: 12px;
+  }
+
+  .contracts-table-wrapper,
+  .pow-table-wrapper {
+    overflow-x: auto;
+  }
+
+  .contracts-table {
+    min-width: 760px;
+  }
+
+  .pow-table {
+    min-width: 560px;
+  }
+
+  .notif-panel {
+    width: min(92vw, 340px);
+    right: 0;
+    left: auto;
+  }
+
+  .chat-fab {
+    right: 14px;
+    bottom: 14px;
+  }
+
+  .chat-window {
+    right: 12px;
+    bottom: 76px;
+    width: min(420px, calc(100vw - 24px));
+    max-width: calc(100vw - 24px);
+  }
+
+  .toast-container {
+    left: 12px;
+    right: 12px;
+    top: 12px;
+  }
+
+  .toast {
+    width: 100%;
+  }
+
+  .photo-modal {
+    width: 96vw;
+    max-width: 96vw;
+    flex-direction: column;
+  }
+
+  .photo-modal-left img {
+    height: 56vh;
+  }
+
+  .photo-modal-right {
+    width: 100%;
+  }
+}
+
+@media (max-width: 700px) {
+  .dashboard-header {
+    padding-top: 14px;
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .header-actions {
+    width: 100%;
+    justify-content: flex-end;
+  }
+
+  .card-grid {
+    grid-template-columns: 1fr;
+    gap: 12px;
+    padding-top: 12px;
+    padding-bottom: 12px;
+  }
+
+  .documents-monitoring {
+    margin: 0 16px 12px;
+  }
+
+  .project-filter-bar {
+    gap: 8px;
+    margin-top: 12px;
+  }
+
+  .filter-search {
+    min-width: 100%;
+  }
+
+  .photo-modal-left img {
+    height: 46vh;
+  }
 }
