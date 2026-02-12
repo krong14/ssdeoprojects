@@ -156,8 +156,28 @@ async function fetchEngineersFromApi() {
     if (!res.ok) throw new Error(`Status ${res.status}`);
     const data = await res.json();
     if (Array.isArray(data?.engineers)) {
-      saveEngineers(data.engineers);
-      return data.engineers;
+      const remoteList = data.engineers;
+      const localList = loadEngineers();
+
+      // Do not wipe existing cached engineers when backend returns an empty list.
+      // If we have local data, try to repopulate the backend once.
+      if (remoteList.length === 0 && localList.length > 0) {
+        for (const engineer of localList) {
+          try {
+            await fetch(engineersApiEndpoint, {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify(engineer)
+            });
+          } catch (err) {
+            // Keep going so one failed item doesn't block the rest.
+          }
+        }
+        return localList;
+      }
+
+      saveEngineers(remoteList);
+      return remoteList;
     }
   } catch (err) {
     console.warn("Engineers fetch failed:", err);
