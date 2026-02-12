@@ -469,6 +469,14 @@ async function fetchProjectsForDashboard() {
     }
 
     const projects = json.projects || [];
+    let updateOverrides = {};
+    try {
+      const raw = appStorage.getItem("projectUpdates");
+      const parsed = raw ? JSON.parse(raw) : {};
+      updateOverrides = parsed && typeof parsed === "object" ? parsed : {};
+    } catch (err) {
+      updateOverrides = {};
+    }
     const validProjects = [];
     projects.forEach(p => {
       const contractId = p["CONTRACT ID"] || "";
@@ -482,8 +490,13 @@ async function fetchProjectsForDashboard() {
       const startDate = p["START DATE"] || "";
       const expirationDate = p["EXPIRATION DATE"] || "";
       const location = p["LOCATION"] || "";
+      const appropriation = p["APPROPRIATION"] || "";
+      const approvedBudgetCost = p["APPROVED BUDGET COST (ABC)"] || "";
       const meta = getProjectMeta(contractId);
       const coordinates = meta?.coordinates || "";
+      const override = updateOverrides[String(contractId || "").trim().toUpperCase()] || {};
+      const revisedContractAmount = String(override.revisedContractAmount || "").trim();
+      const revisedExpirationDates = Array.isArray(override.revisedExpirationDates) ? override.revisedExpirationDates : [];
       const inCharge = {
         projectEngineer: p["PROJECT ENGINEER"] || "",
         materialsEngineer: p["MATERIALS ENGINEER"] || "",
@@ -508,6 +521,10 @@ async function fetchProjectsForDashboard() {
       tr.dataset.category = category;
       tr.dataset.startDate = startDate;
       tr.dataset.expirationDate = expirationDate;
+      tr.dataset.appropriation = appropriation;
+      tr.dataset.approvedBudgetCost = approvedBudgetCost;
+      tr.dataset.revisedContractAmount = revisedContractAmount;
+      tr.dataset.revisedExpirationDates = JSON.stringify(revisedExpirationDates);
       tr.dataset.location = location || meta?.location || "";
       tr.dataset.coordinates = coordinates;
       tr.dataset.inCharge = JSON.stringify(inCharge);
@@ -1275,6 +1292,8 @@ function openDetailsModal(row) {
   const expirationDate = row.dataset.expirationDate || "";
   const location = row.dataset.location || "";
   const coordinates = row.dataset.coordinates || "";
+  const revisedContractAmount = row.dataset.revisedContractAmount || "";
+  const revisedExpirationDates = row.dataset.revisedExpirationDates ? JSON.parse(row.dataset.revisedExpirationDates) : [];
   const inCharge = row.dataset.inCharge ? JSON.parse(row.dataset.inCharge) : {};
   currentDetailsData = {
     contractId,
@@ -1284,6 +1303,8 @@ function openDetailsModal(row) {
     appropriation: row.dataset.appropriation || "",
     approvedBudgetCost: row.dataset.approvedBudgetCost || "",
     contractCost: cost,
+    revisedContractAmount,
+    revisedExpirationDates,
     startDate,
     expirationDate,
     status,
@@ -1314,12 +1335,39 @@ function openDetailsModal(row) {
     const safeCost = escapeHtml(formatted);
     detailsCostEl.innerHTML = `<span class="peso-sign">\u20B1</span><span class="peso-amount">${safeCost}</span>`;
   }
+  const detailsAppropriation = document.getElementById("detailsAppropriation");
+  if (detailsAppropriation) detailsAppropriation.innerText = formatMoneyDisplay(currentDetailsData?.appropriation || "-");
+  const detailsContractCost = document.getElementById("detailsContractCost");
+  if (detailsContractCost) detailsContractCost.innerText = formatMoneyDisplay(currentDetailsData?.contractCost || "-");
+  const detailsApprovedBudgetCost = document.getElementById("detailsApprovedBudgetCost");
+  if (detailsApprovedBudgetCost) detailsApprovedBudgetCost.innerText = formatMoneyDisplay(currentDetailsData?.approvedBudgetCost || "-");
+  const revisedContractBlock = document.getElementById("detailsRevisedContractCostBlock");
+  const detailsRevisedContractCost = document.getElementById("detailsRevisedContractCost");
+  const revisedContractAmountValue = String(currentDetailsData?.revisedContractAmount || "").trim();
+  if (revisedContractBlock) revisedContractBlock.classList.toggle("hidden", !revisedContractAmountValue);
+  if (detailsRevisedContractCost) {
+    detailsRevisedContractCost.innerText = revisedContractAmountValue
+      ? formatMoneyDisplay(revisedContractAmountValue)
+      : "-";
+  }
   document.getElementById("detailsCompletion").innerText =
     getCompletionDisplay(accomplishment, completionDate);
+  const revisedExpirationBlock = document.getElementById("detailsRevisedExpirationBlock");
+  const detailsRevisedExpiration = document.getElementById("detailsRevisedExpiration");
+  const revisedDates = Array.isArray(currentDetailsData?.revisedExpirationDates)
+    ? currentDetailsData.revisedExpirationDates.filter(Boolean)
+    : [];
+  const latestRevisedExpiration = revisedDates.length ? revisedDates[revisedDates.length - 1] : "";
+  if (revisedExpirationBlock) revisedExpirationBlock.classList.toggle("hidden", !latestRevisedExpiration);
+  if (detailsRevisedExpiration) {
+    detailsRevisedExpiration.innerText = latestRevisedExpiration
+      ? formatDateLong(latestRevisedExpiration)
+      : "-";
+  }
 
   const statusEl = document.getElementById("detailsStatus");
   if (statusEl) {
-    statusEl.innerText = status || "—";
+    statusEl.innerText = status || "â€”";
     statusEl.classList.remove("success", "warning", "danger");
     statusEl.classList.add(statusToTag(status));
   }
@@ -1530,13 +1578,13 @@ function updatePhotoModal() {
   const dateObj = dateValue ? new Date(dateValue) : null;
   const dateText = dateObj && !Number.isNaN(dateObj.getTime())
     ? dateObj.toLocaleDateString("en-PH")
-    : "�";
+    : "—";
 
   if (photoModalImage) photoModalImage.src = src || '';
   if (photoId) photoId.textContent = `${currentGalleryContract}-photo-${currentGalleryIndex + 1}`;
   if (photoPurpose) photoPurpose.textContent = 'Geotagged Photo';
   if (photoDate) photoDate.textContent = dateText;
-  if (photoLocation) photoLocation.textContent = currentGalleryContract || '�';
+  if (photoLocation) photoLocation.textContent = currentGalleryContract || '—';
   if (photoDownloadBtn) {
     const fallbackName = `${currentGalleryContract}-photo-${currentGalleryIndex + 1}.jpg`;
     photoDownloadBtn.href = src || '#';
@@ -1754,7 +1802,7 @@ function initProjectMap() {
 
   streetLayer = L.tileLayer(
     "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
-    { attribution: "© OpenStreetMap contributors" }
+    { attribution: "Â© OpenStreetMap contributors" }
   ).addTo(projectMap);
 
   satelliteLayer = L.tileLayer(
@@ -2132,3 +2180,4 @@ document.addEventListener('DOMContentLoaded', () => {
     if (e.key === 'ArrowRight') showGalleryPhoto(currentGalleryIndex + 1);
   });
 });
+
