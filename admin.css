@@ -65,6 +65,7 @@
 .admin-list {
   display: grid;
   gap: 12px;
+  color: var(--text-main);
 }
 
 .admin-item {
