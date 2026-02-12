@@ -97,7 +97,7 @@ const countEl = document.getElementById("engineerCount");
 const loadingEl = document.getElementById("engineerLoading");
 
 function normalizeName(name) {
-  return String(name || "").trim();
+  return String(name || "").trim().toUpperCase();
 }
 
 function normalizeRole(role) {
@@ -505,3 +505,4 @@ nameInput?.addEventListener("keydown", (event) => {
 });
 
 syncEngineers();
+
