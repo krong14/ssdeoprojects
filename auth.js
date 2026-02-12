@@ -20,7 +20,7 @@ function isAdminEmail(email) {
 }
 
 function loadUsers() {
-  const raw = localStorage.getItem(USERS_KEY);
+  const raw = appStorage.getItem(USERS_KEY);
   if (!raw) return [];
   try {
     const parsed = JSON.parse(raw);
@@ -31,7 +31,7 @@ function loadUsers() {
 }
 
 function saveUsers(list) {
-  localStorage.setItem(USERS_KEY, JSON.stringify(list));
+  appStorage.setItem(USERS_KEY, JSON.stringify(list));
 }
 
 function ensureSuperAdminUser() {
@@ -106,11 +106,11 @@ function storeSession(user, remember) {
   };
   const json = JSON.stringify(payload);
   if (remember) {
-    localStorage.setItem(SESSION_KEY, json);
+    appStorage.setItem(SESSION_KEY, json);
     sessionStorage.removeItem(SESSION_KEY);
   } else {
     sessionStorage.setItem(SESSION_KEY, json);
-    localStorage.removeItem(SESSION_KEY);
+    appStorage.removeItem(SESSION_KEY);
   }
 }
 

@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Profile</title>
+  <link rel="stylesheet" href="profile.css">
+  <link rel="icon" type="image/png" href="assets/dpwh-logo.png">
+  <link href="https://unpkg.com/boxicons@2.1.1/css/boxicons.min.css" rel="stylesheet">
+</head>
+
+<body>
+  <nav class="sidebar close">
+    <header>
+      <div class="image-text">
+        <span class="image">
+          <img src="assets/dpwh-logo.png" alt="logo">
+        </span>
+        <div class="text header-text">
+          <span class="name">DPWH</span>
+          <span class="profession">Samar 2nd DEO </span>
+        </div>
+      </div>
+      <i class='bx bx-chevron-right toggle'></i>
+    </header>
+
+    <div class="menu-bar">
+      <div class="menu">
+        <ul class="menu-links">
+          <li class="nav-link">
+            <a href="dashboard.html">
+              <i class='bx bx-home-alt icon'></i>
+              <span class="text nav-text">Dashboard</span>
+            </a>
+          </li>
+          <li class="nav-link">
+            <a href="projects.html">
+              <i class='bx bx-briefcase-alt-2 icon'></i>
+              <span class="text nav-text">Projects</span>
+            </a>
+          </li>
+          <li class="nav-link">
+            <a href="documents.html">
+              <i class='bx bx-file icon'></i>
+              <span class="text nav-text">Documents</span>
+            </a>
+          </li>
+          <li class="nav-link">
+            <a href="gallery.html">
+              <i class='bx bx-image icon'></i>
+              <span class="text nav-text">Gallery</span>
+            </a>
+          </li>
+          <li class="nav-link">
+            <a href="engineers.html">
+              <i class='bx bx-user icon'></i>
+              <span class="text nav-text">Engineers</span>
+            </a>
+          </li>
+          <li class="nav-link active">
+            <a href="profile.html">
+              <i class='bx bx-id-card icon'></i>
+              <span class="text nav-text">Profile</span>
+            </a>
+          </li>
+          <li class="nav-link admin-only" data-admin-only>
+            <a href="admin.html">
+              <i class='bx bx-shield icon'></i>
+              <span class="text nav-text">Admin</span>
+            </a>
+          </li>
+        </ul>
+      </div>
+      <div class="bottom-content">
+        <li>
+          <a href="index.html" data-logout="true">
+            <i class='bx bx-log-out icon'></i>
+            <span class="text nav-text">Logout</span>
+          </a>
+        </li>
+        <li class="mode">
+          <div class="moon-sun">
+            <i class='bx bx-moon icon moon'></i>
+            <i class='bx bx-sun icon sun'></i>
+          </div>
+          <span class="mode-text text">Dark Mode</span>
+          <div class="toggle-switch">
+            <span class="switch"></span>
+          </div>
+        </li>
+      </div>
+    </div>
+  </nav>
+
+  <section class="home">
+    <div class="dashboard-header profile-header">
+      <div>
+        <h1>My Profile</h1>
+        <p>Manage profile details, preferred designations, and assigned projects</p>
+      </div>
+    </div>
+
+    <div class="profile-metrics">
+      <div class="metric-card">
+        <div class="metric-icon blue">
+          <i class='bx bx-layer'></i>
+        </div>
+        <div class="metric-body">
+          <span class="metric-label">Assigned Projects</span>
+          <strong id="metricAssigned" class="metric-value">0</strong>
+        </div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-icon orange">
+          <i class='bx bx-time-five'></i>
+        </div>
+        <div class="metric-body">
+          <span class="metric-label">On-Going</span>
+          <strong id="metricOngoing" class="metric-value">0</strong>
+        </div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-icon purple">
+          <i class='bx bx-pause-circle'></i>
+        </div>
+        <div class="metric-body">
+          <span class="metric-label">Suspended</span>
+          <strong id="metricSuspended" class="metric-value">0</strong>
+        </div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-icon green">
+          <i class='bx bx-check-circle'></i>
+        </div>
+        <div class="metric-body">
+          <span class="metric-label">Completed</span>
+          <strong id="metricCompleted" class="metric-value">0</strong>
+        </div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-icon red">
+          <i class='bx bx-error-circle'></i>
+        </div>
+        <div class="metric-body">
+          <span class="metric-label">Expired</span>
+          <strong id="metricExpired" class="metric-value">0</strong>
+        </div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-icon teal">
+          <i class='bx bx-file'></i>
+        </div>
+        <div class="metric-body">
+          <span class="metric-label">Documents</span>
+          <strong id="metricDocuments" class="metric-value">0%</strong>
+          <span id="metricDocumentsMeta" class="metric-meta">0/0 uploaded</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="profile-layout">
+      <div class="panel profile-card">
+        <div class="profile-photo-wrap">
+          <div class="profile-photo" id="profilePhoto">U</div>
+        </div>
+
+        <div class="profile-info">
+          <h3 id="profileName">User</h3>
+          <p id="profileEmail">-</p>
+          <span class="profile-tag" id="profileRole">User</span>
+        </div>
+
+        <div class="roles-card">
+          <h4>Add Designation</h4>
+          <p>Add your designation and accreditation number for your profile.</p>
+          <div class="role-form-grid">
+            <div class="role-field">
+              <label class="role-select-label" for="roleOption">Designation</label>
+              <select id="roleOption" class="role-option-select">
+                <option value="">Select designation</option>
+                <option value="Project Engineer">Project Engineer</option>
+                <option value="Project Inspector">Project Inspector</option>
+                <option value="Materials Engineer">Materials Engineer</option>
+                <option value="Materials Inspector">Materials Inspector</option>
+              </select>
+            </div>
+            <div class="role-field">
+              <label class="role-select-label" for="roleAccreditation">Accreditation</label>
+              <input type="text" id="roleAccreditation" class="role-accreditation-input" placeholder="e.g. ACC-12345">
+            </div>
+          </div>
+          <button class="btn secondary" id="addRoleBtn" type="button">Add Designation</button>
+
+          <div class="role-table" id="roleTable">
+            <div class="role-table-head">
+              <span>Designation</span>
+              <span>Accreditation</span>
+              <span aria-hidden="true"></span>
+            </div>
+            <div class="role-table-body" id="roleTableBody">
+              <div class="role-empty">No designations added yet.</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="panel assigned-card">
+        <div class="assigned-header">
+          <h3>Assigned Projects</h3>
+          <span id="assignedCount">0 assigned</span>
+        </div>
+        <div class="assigned-search">
+          <i class='bx bx-search'></i>
+          <input type="text" id="assignedSearch" placeholder="Search contract, project, contractor">
+        </div>
+        <div class="assigned-list" id="assignedList">
+          <div class="assigned-empty">Loading assigned projects...</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <script src="online-storage.js"></script>
+  <script src="auth-guard.js"></script>
+  <script src="config.js"></script>
+  <script src="profile.js"></script>
+</body>
+
+</html>

@@ -10,7 +10,7 @@ const engineersApiEndpoint = apiBase ? `${apiBase}/api/engineers` : "";
 
 const applySidebarState = () => {
   if (!sidebar) return;
-  const stored = localStorage.getItem(sidebarStateKey);
+  const stored = appStorage.getItem(sidebarStateKey);
   if (stored === null) return;
   const shouldBeOpen = stored === "true";
   sidebar.classList.toggle("close", !shouldBeOpen);
@@ -19,7 +19,7 @@ const applySidebarState = () => {
 applySidebarState();
 
 const applyThemeState = () => {
-  const stored = localStorage.getItem(themeStateKey);
+  const stored = appStorage.getItem(themeStateKey);
   if (stored === null) return;
   const isDark = stored === "true";
   body.classList.toggle("dark", isDark);
@@ -33,13 +33,13 @@ applyThemeState();
 toggle?.addEventListener("click", () => {
   sidebar.classList.toggle("close");
   const isOpen = !sidebar.classList.contains("close");
-  localStorage.setItem(sidebarStateKey, String(isOpen));
+  appStorage.setItem(sidebarStateKey, String(isOpen));
 });
 
 modeSwitch?.addEventListener("click", () => {
   body.classList.toggle("dark");
   const isDark = body.classList.contains("dark");
-  localStorage.setItem(themeStateKey, String(isDark));
+  appStorage.setItem(themeStateKey, String(isDark));
   if (modeText) {
     modeText.innerText = isDark ? "Light Mode" : "Dark Mode";
   }
@@ -116,7 +116,7 @@ function normalizeRole(role) {
 }
 
 function loadEngineers() {
-  const raw = localStorage.getItem(engineersStorageKey);
+  const raw = appStorage.getItem(engineersStorageKey);
   if (!raw) return [];
   try {
     const parsed = JSON.parse(raw);
@@ -146,7 +146,7 @@ function loadEngineers() {
 }
 
 function saveEngineers(list) {
-  localStorage.setItem(engineersStorageKey, JSON.stringify(list));
+  appStorage.setItem(engineersStorageKey, JSON.stringify(list));
 }
 
 async function fetchEngineersFromApi() {

@@ -25,14 +25,14 @@ const totalCount = document.getElementById("totalCount");
 
 const applySidebarState = () => {
   if (!sidebar) return;
-  const stored = localStorage.getItem(sidebarStateKey);
+  const stored = appStorage.getItem(sidebarStateKey);
   if (stored === null) return;
   const shouldBeOpen = stored === "true";
   sidebar.classList.toggle("close", !shouldBeOpen);
 };
 
 const applyThemeState = () => {
-  const stored = localStorage.getItem(themeStateKey);
+  const stored = appStorage.getItem(themeStateKey);
   if (stored === null) return;
   const isDark = stored === "true";
   body?.classList.toggle("dark", isDark);
@@ -45,13 +45,13 @@ applyThemeState();
 toggle?.addEventListener("click", () => {
   sidebar?.classList.toggle("close");
   const isOpen = sidebar ? !sidebar.classList.contains("close") : true;
-  localStorage.setItem(sidebarStateKey, String(isOpen));
+  appStorage.setItem(sidebarStateKey, String(isOpen));
 });
 
 modeSwitch?.addEventListener("click", () => {
   body?.classList.toggle("dark");
   const isDark = body?.classList.contains("dark");
-  localStorage.setItem(themeStateKey, String(isDark));
+  appStorage.setItem(themeStateKey, String(isDark));
   if (modeText) modeText.innerText = isDark ? "Light Mode" : "Dark Mode";
 });
 
@@ -70,7 +70,7 @@ function isSuperAdminEmail(email) {
 }
 
 function loadUsers() {
-  const raw = localStorage.getItem(USERS_KEY);
+  const raw = appStorage.getItem(USERS_KEY);
   if (!raw) return [];
   try {
     const parsed = JSON.parse(raw);
@@ -81,7 +81,7 @@ function loadUsers() {
 }
 
 function saveUsers(list) {
-  localStorage.setItem(USERS_KEY, JSON.stringify(list));
+  appStorage.setItem(USERS_KEY, JSON.stringify(list));
 }
 
 function updateUserStatus(email, status) {

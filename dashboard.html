@@ -109,16 +109,29 @@
           <i class='bx bx-bell'></i>
           <span class="notif-badge" id="notifBadge">0</span>
         </button>
-  <div class="notif-panel" id="notifPanel">
-    <div class="notif-panel-header">
-      <span>Notifications</span>
-      <button type="button" id="notifClear" class="notif-clear">Clear</button>
-    </div>
-    <div class="notif-list" id="notifList">
-      <div class="notif-empty">No notifications yet.</div>
-    </div>
-  </div>
-</div>
+        <button class="profile-btn" id="profileBtn" aria-label="Profile">
+          <span class="profile-avatar" id="profileAvatar">U</span>
+        </button>
+        <div class="notif-panel" id="notifPanel">
+          <div class="notif-panel-header">
+            <span>Notifications</span>
+            <button type="button" id="notifClear" class="notif-clear">Clear</button>
+          </div>
+          <div class="notif-list" id="notifList">
+            <div class="notif-empty">No notifications yet.</div>
+          </div>
+        </div>
+        <div class="profile-panel" id="profilePanel">
+          <div class="profile-name" id="profileName">User</div>
+          <div class="profile-email" id="profileEmail">-</div>
+          <div class="profile-role" id="profileRole">User</div>
+          <a class="profile-open" href="profile.html">
+            <i class='bx bx-id-card'></i>
+            Open Profile
+          </a>
+          <button type="button" class="profile-logout" data-logout="true">Logout</button>
+        </div>
+      </div>
 
     </div>
 
@@ -659,6 +672,7 @@
   </section>
 
 
+  <script src="online-storage.js"></script>
   <script src="auth-guard.js"></script>
   <script src="config.js"></script>
   <script src="dashboard.js"></script>

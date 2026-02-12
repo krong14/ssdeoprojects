@@ -25,7 +25,7 @@ let currentPreviewContract = "";
 
 const applySidebarState = () => {
   if (!sidebar) return;
-  const stored = localStorage.getItem(sidebarStateKey);
+  const stored = appStorage.getItem(sidebarStateKey);
   if (stored === null) return;
   const shouldBeOpen = stored === "true";
   sidebar.classList.toggle("close", !shouldBeOpen);
@@ -34,7 +34,7 @@ const applySidebarState = () => {
 applySidebarState();
 
 const applyThemeState = () => {
-  const stored = localStorage.getItem(themeStateKey);
+  const stored = appStorage.getItem(themeStateKey);
   if (stored === null) return;
   const isDark = stored === "true";
   body.classList.toggle("dark", isDark);
@@ -60,7 +60,7 @@ const SESSION_KEY = "dpwh_current_user";
 
 function getCurrentUser() {
   if (window.DPWH_CURRENT_USER) return window.DPWH_CURRENT_USER;
-  const raw = localStorage.getItem(SESSION_KEY) || sessionStorage.getItem(SESSION_KEY);
+  const raw = appStorage.getItem(SESSION_KEY) || sessionStorage.getItem(SESSION_KEY);
   if (!raw) return null;
   try {
     return JSON.parse(raw);
@@ -107,18 +107,18 @@ function canManageContract(contractId) {
 toggle?.addEventListener("click", () => {
   sidebar.classList.toggle("close");
   const isOpen = !sidebar.classList.contains("close");
-  localStorage.setItem(sidebarStateKey, String(isOpen));
+  appStorage.setItem(sidebarStateKey, String(isOpen));
 });
 
 modeSwitch?.addEventListener("click", () => {
   body.classList.toggle("dark");
   const isDark = body.classList.contains("dark");
-  localStorage.setItem(themeStateKey, String(isDark));
+  appStorage.setItem(themeStateKey, String(isDark));
   modeText.innerText = isDark ? "Light Mode" : "Dark Mode";
 });
 
 function loadGalleryPhotos() {
-  const raw = localStorage.getItem(photosStorageKey);
+  const raw = appStorage.getItem(photosStorageKey);
   if (!raw) return {};
   try {
     const parsed = JSON.parse(raw);
@@ -129,7 +129,7 @@ function loadGalleryPhotos() {
 }
 
 function saveGalleryPhotos(data) {
-  localStorage.setItem(photosStorageKey, JSON.stringify(data));
+  appStorage.setItem(photosStorageKey, JSON.stringify(data));
 }
 
 function normalizeContractId(value) {

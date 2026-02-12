@@ -7,7 +7,7 @@ const sidebarStateKey = "sidebarOpen"
 const themeStateKey = "darkMode"
 
 const applySidebarState = () => {
-    const stored = localStorage.getItem(sidebarStateKey)
+    const stored = appStorage.getItem(sidebarStateKey)
     if (stored === null) return
     const shouldBeOpen = stored === "true"
     sidebar.classList.toggle("close", !shouldBeOpen)
@@ -16,7 +16,7 @@ const applySidebarState = () => {
 applySidebarState()
 
 const applyThemeState = () => {
-    const stored = localStorage.getItem(themeStateKey)
+    const stored = appStorage.getItem(themeStateKey)
     if (stored === null) return
     const isDark = stored === "true"
     body.classList.toggle("dark", isDark)
@@ -38,7 +38,7 @@ function getApiBase() {
 const SESSION_KEY = "dpwh_current_user";
 function getCurrentUser() {
     if (window.DPWH_CURRENT_USER) return window.DPWH_CURRENT_USER;
-    const raw = localStorage.getItem(SESSION_KEY) || sessionStorage.getItem(SESSION_KEY);
+    const raw = appStorage.getItem(SESSION_KEY) || sessionStorage.getItem(SESSION_KEY);
     if (!raw) return null;
     try {
         return JSON.parse(raw);
@@ -101,7 +101,7 @@ function getNotificationKey() {
 }
 
 function loadNotifications() {
-    const raw = localStorage.getItem(getNotificationKey());
+    const raw = appStorage.getItem(getNotificationKey());
     if (!raw) return [];
     try {
         const parsed = JSON.parse(raw);
@@ -112,7 +112,7 @@ function loadNotifications() {
 }
 
 function saveNotifications(list) {
-    localStorage.setItem(getNotificationKey(), JSON.stringify(list));
+    appStorage.setItem(getNotificationKey(), JSON.stringify(list));
 }
 
 function ensureToastContainer() {
@@ -185,7 +185,7 @@ async function syncEngineersDirectory() {
         if (!res.ok) throw new Error(`Status ${res.status}`);
         const data = await res.json();
         if (Array.isArray(data?.engineers)) {
-            localStorage.setItem(engineersStorageKey, JSON.stringify(data.engineers));
+            appStorage.setItem(engineersStorageKey, JSON.stringify(data.engineers));
         }
     } catch (err) {
         console.warn("Engineer directory sync failed:", err);
@@ -193,7 +193,7 @@ async function syncEngineersDirectory() {
 }
 
 function getEngineersFromStorage() {
-    const raw = localStorage.getItem(engineersStorageKey);
+    const raw = appStorage.getItem(engineersStorageKey);
     if (!raw) return [];
     try {
         const parsed = JSON.parse(raw);
@@ -391,13 +391,13 @@ function applyDetailsPermissions(canEdit) {
 toggle.addEventListener("click", () => {
     sidebar.classList.toggle("close");
     const isOpen = !sidebar.classList.contains("close")
-    localStorage.setItem(sidebarStateKey, String(isOpen))
+    appStorage.setItem(sidebarStateKey, String(isOpen))
 });
 
 modeSwitch.addEventListener("click", () => {
     body.classList.toggle("dark");
     const isDark = body.classList.contains("dark")
-    localStorage.setItem(themeStateKey, String(isDark))
+    appStorage.setItem(themeStateKey, String(isDark))
     if (modeText) {
         modeText.innerText = isDark ? "Light Mode" : "Dark Mode"
     }
@@ -490,12 +490,12 @@ function saveDraft() {
         data.fields[id] = getDraftFieldValue(id);
     });
 
-    localStorage.setItem(draftStorageKey, JSON.stringify(data));
+    appStorage.setItem(draftStorageKey, JSON.stringify(data));
 }
 
 function loadDraft() {
     if (!modal) return;
-    const raw = localStorage.getItem(draftStorageKey);
+    const raw = appStorage.getItem(draftStorageKey);
     if (!raw) return;
 
     let data;
@@ -528,7 +528,7 @@ function loadDraft() {
 }
 
 function clearDraft() {
-    localStorage.removeItem(draftStorageKey);
+    appStorage.removeItem(draftStorageKey);
 }
 
 function bindDraftListeners() {
@@ -900,7 +900,7 @@ function findRowByContractId(contractId) {
 }
 
 function loadUpdateOverrides() {
-    const raw = localStorage.getItem(updateOverridesKey);
+    const raw = appStorage.getItem(updateOverridesKey);
     if (!raw) return {};
     try {
         const parsed = JSON.parse(raw);
@@ -911,11 +911,11 @@ function loadUpdateOverrides() {
 }
 
 function saveUpdateOverrides(data) {
-    localStorage.setItem(updateOverridesKey, JSON.stringify(data));
+    appStorage.setItem(updateOverridesKey, JSON.stringify(data));
 }
 
 function loadProjectMeta() {
-    const raw = localStorage.getItem(projectMetaKey);
+    const raw = appStorage.getItem(projectMetaKey);
     if (!raw) return {};
     try {
         const parsed = JSON.parse(raw);
@@ -926,7 +926,7 @@ function loadProjectMeta() {
 }
 
 function saveProjectMeta(data) {
-    localStorage.setItem(projectMetaKey, JSON.stringify(data));
+    appStorage.setItem(projectMetaKey, JSON.stringify(data));
 }
 
 function setProjectMeta(contractId, meta) {
@@ -948,7 +948,7 @@ function getProjectMeta(contractId) {
 }
 
 function loadProjectPow() {
-    const raw = localStorage.getItem(projectPowKey);
+    const raw = appStorage.getItem(projectPowKey);
     if (!raw) return {};
     try {
         const parsed = JSON.parse(raw);
@@ -959,7 +959,7 @@ function loadProjectPow() {
 }
 
 function saveProjectPow(data) {
-    localStorage.setItem(projectPowKey, JSON.stringify(data));
+    appStorage.setItem(projectPowKey, JSON.stringify(data));
 }
 
 function normalizePowItems(value) {
@@ -1038,7 +1038,7 @@ function getProjectPow(contractId) {
 }
 
 function loadVariationOrders() {
-    const raw = localStorage.getItem(variationOrdersKey);
+    const raw = appStorage.getItem(variationOrdersKey);
     if (!raw) return {};
     try {
         const parsed = JSON.parse(raw);
@@ -1049,7 +1049,7 @@ function loadVariationOrders() {
 }
 
 function saveVariationOrders(data) {
-    localStorage.setItem(variationOrdersKey, JSON.stringify(data));
+    appStorage.setItem(variationOrdersKey, JSON.stringify(data));
 }
 
 function getVariationOrder(contractId) {
@@ -1989,7 +1989,7 @@ tableBody.addEventListener("click", async (e) => {
     }
     document.getElementById("detailsCompletion").innerText =
         getCompletionDisplay(row.dataset.accomplishment || completion, row.dataset.completionDate || completion);
-    document.getElementById("detailsStatus").innerText = status || "â€”";
+    document.getElementById("detailsStatus").innerText = status || "—";
     const startDate = row.dataset.startDate || "-";
     const expirationDate = row.dataset.expirationDate || "-";
     document.getElementById("detailsStart").innerText = formatDateLong(startDate);
@@ -2372,7 +2372,7 @@ downloadContractBtn?.addEventListener("click", () => {
 
 // Render gallery for a contract ID inside the details modal
 function loadGalleryPhotos() {
-    const raw = localStorage.getItem("galleryPhotos");
+    const raw = appStorage.getItem("galleryPhotos");
     if (!raw) return {};
     try {
         const parsed = JSON.parse(raw);
@@ -2475,13 +2475,13 @@ function updatePhotoModal() {
     const dateObj = dateValue ? new Date(dateValue) : null;
     const dateText = dateObj && !Number.isNaN(dateObj.getTime())
         ? dateObj.toLocaleDateString("en-PH")
-        : "—";
+        : "�";
 
     if (photoModalImage) photoModalImage.src = src || "";
     if (photoId) photoId.textContent = `${currentGalleryContract}-photo-${currentGalleryIndex + 1}`;
     if (photoPurpose) photoPurpose.textContent = "Geotagged Photo";
     if (photoDate) photoDate.textContent = dateText;
-    if (photoLocation) photoLocation.textContent = currentGalleryContract || "—";
+    if (photoLocation) photoLocation.textContent = currentGalleryContract || "�";
 
     if (photoDownloadBtn) {
         const fallbackName = `${currentGalleryContract}-photo-${currentGalleryIndex + 1}.jpg`;
@@ -2548,7 +2548,7 @@ const contractFilesKey = "contractFiles";
 const contractFilesDataKey = "contractFilesData";
 
 function loadContractFilesData() {
-    const raw = localStorage.getItem(contractFilesDataKey);
+    const raw = appStorage.getItem(contractFilesDataKey);
     if (!raw) return {};
     try {
         const parsed = JSON.parse(raw);
@@ -2559,7 +2559,7 @@ function loadContractFilesData() {
 }
 
 function loadContractFiles() {
-    const raw = localStorage.getItem(contractFilesKey);
+    const raw = appStorage.getItem(contractFilesKey);
     if (!raw) return {};
     try {
         const parsed = JSON.parse(raw);
@@ -3195,7 +3195,7 @@ function initProjectMap() {
 
     const streetLayer = L.tileLayer(
         "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
-        { attribution: "Â© OpenStreetMap contributors" }
+        { attribution: "© OpenStreetMap contributors" }
     ).addTo(projectMap);
 
     const satelliteLayer = L.tileLayer(
@@ -3235,7 +3235,7 @@ let projectMarker = null;
 // STREET LAYER
 const streetLayer = L.tileLayer(
     "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
-    { attribution: "Â© OpenStreetMap contributors" }
+    { attribution: "© OpenStreetMap contributors" }
 );
 
 // SATELLITE LAYER

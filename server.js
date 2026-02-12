@@ -12,6 +12,7 @@ const app = express();
 const PORT = Number(process.env.PORT) || 3000;
 const engineersFilePath = path.join(__dirname, 'engineers.json');
 const powFilePath = path.join(__dirname, 'pow-data.json');
+const clientStorageFilePath = path.join(__dirname, 'client-storage.json');
 
 // Wasabi (S3-compatible) storage config
 const WASABI_ACCESS_KEY_ID = process.env.WASABI_ACCESS_KEY_ID || '';
@@ -268,6 +269,73 @@ function findEngineerIndex(list, name, role) {
         String(e.role || '').trim().toLowerCase() === targetRole
     );
 }
+
+// ----------------------------------------------------------------------------------------------
+// Client storage (online key-value storage)
+// ----------------------------------------------------------------------------------------------
+function normalizeClientStorageData(value) {
+    const out = Object.create(null);
+    if (!value || typeof value !== 'object' || Array.isArray(value)) return out;
+    Object.entries(value).forEach(([key, itemValue]) => {
+        const safeKey = String(key || '').trim();
+        if (!safeKey) return;
+        out[safeKey] = String(itemValue ?? '');
+    });
+    return out;
+}
+
+function readClientStorage() {
+    try {
+        if (!fs.existsSync(clientStorageFilePath)) return Object.create(null);
+        const raw = fs.readFileSync(clientStorageFilePath, 'utf-8');
+        const parsed = JSON.parse(raw);
+        return normalizeClientStorageData(parsed);
+    } catch (err) {
+        return Object.create(null);
+    }
+}
+
+function writeClientStorage(data) {
+    const safeData = normalizeClientStorageData(data);
+    fs.writeFileSync(clientStorageFilePath, JSON.stringify(safeData, null, 2));
+    return safeData;
+}
+
+app.get('/api/client-storage', (req, res) => {
+    const data = readClientStorage();
+    res.json({ success: true, data });
+});
+
+app.put('/api/client-storage/item', (req, res) => {
+    const key = String(req.body?.key || '').trim();
+    if (!key) {
+        return res.status(400).json({ success: false, error: 'Missing storage key.' });
+    }
+    const value = String(req.body?.value ?? '');
+    const data = readClientStorage();
+    data[key] = value;
+    writeClientStorage(data);
+    res.json({ success: true });
+});
+
+app.delete('/api/client-storage/item/:key', (req, res) => {
+    const key = String(req.params.key || '').trim();
+    if (!key) {
+        return res.status(400).json({ success: false, error: 'Missing storage key.' });
+    }
+    const data = readClientStorage();
+    if (!(key in data)) {
+        return res.status(404).json({ success: false, error: 'Storage key not found.' });
+    }
+    delete data[key];
+    writeClientStorage(data);
+    res.json({ success: true });
+});
+
+app.delete('/api/client-storage', (req, res) => {
+    writeClientStorage(Object.create(null));
+    res.json({ success: true });
+});
 
 // ----------------------------------------------------------------------------------------------
 // Program of Works persistence (JSON file)

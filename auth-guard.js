@@ -1,13 +1,13 @@
 const sessionKey = "dpwh_current_user";
 
 function getSession() {
-  const fromLocal = localStorage.getItem(sessionKey);
+  const fromLocal = appStorage.getItem(sessionKey);
   if (fromLocal) return fromLocal;
   return sessionStorage.getItem(sessionKey);
 }
 
 function clearSession() {
-  localStorage.removeItem(sessionKey);
+  appStorage.removeItem(sessionKey);
   sessionStorage.removeItem(sessionKey);
 }
 

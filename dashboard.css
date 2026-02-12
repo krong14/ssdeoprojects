@@ -516,6 +516,31 @@ body.dark .switch::before {
   justify-content: center;
 }
 
+.profile-btn {
+  border: none;
+  background: transparent;
+  padding: 0;
+  cursor: pointer;
+}
+
+.profile-avatar {
+  width: 42px;
+  height: 42px;
+  border-radius: 12px;
+  display: grid;
+  place-items: center;
+  background: linear-gradient(135deg, #0f172a, #1e293b);
+  color: #fff;
+  font-weight: 700;
+  box-shadow: 0 8px 18px rgba(15, 23, 42, 0.28);
+  background-size: cover;
+  background-position: center;
+}
+
+.profile-avatar.has-image {
+  color: transparent;
+}
+
 .notif-panel {
   position: absolute;
   right: 0;
@@ -533,6 +558,86 @@ body.dark .switch::before {
 
 .notif-panel.open {
   display: block;
+}
+
+.profile-panel {
+  position: absolute;
+  right: 0;
+  top: 52px;
+  width: 260px;
+  background: #0f172a;
+  color: #fff;
+  border-radius: 12px;
+  box-shadow: 0 18px 38px rgba(0,0,0,0.28);
+  border: 1px solid rgba(255,255,255,0.05);
+  padding: 12px;
+  display: none;
+  z-index: 1500;
+}
+
+.profile-panel.open {
+  display: block;
+}
+
+.profile-name {
+  font-size: 14px;
+  font-weight: 700;
+  margin-bottom: 2px;
+}
+
+.profile-email {
+  font-size: 12px;
+  color: #cbd5e1;
+  margin-bottom: 8px;
+  word-break: break-word;
+}
+
+.profile-role {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  padding: 3px 10px;
+  font-size: 11px;
+  font-weight: 600;
+  color: #0f172a;
+  background: #fbbf24;
+  margin-bottom: 10px;
+}
+
+.profile-open {
+  width: 100%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  text-decoration: none;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(255, 255, 255, 0.06);
+  color: #fff;
+  border-radius: 10px;
+  padding: 9px 10px;
+  font-weight: 600;
+  margin-bottom: 8px;
+}
+
+.profile-open:hover {
+  background: rgba(255, 255, 255, 0.12);
+}
+
+.profile-logout {
+  width: 100%;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(255, 255, 255, 0.06);
+  color: #fff;
+  border-radius: 10px;
+  padding: 9px 10px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.profile-logout:hover {
+  background: rgba(255, 255, 255, 0.12);
 }
 
 .notif-panel-header {
@@ -2519,6 +2624,12 @@ body.dark .info-box {
 
   .notif-panel {
     width: min(92vw, 340px);
+    right: 0;
+    left: auto;
+  }
+
+  .profile-panel {
+    width: min(92vw, 280px);
     right: 0;
     left: auto;
   }

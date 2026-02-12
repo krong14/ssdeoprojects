@@ -8,7 +8,7 @@ const themeStateKey = "darkMode";
 
 const applySidebarState = () => {
   if (!sidebar) return;
-  const stored = localStorage.getItem(sidebarStateKey);
+  const stored = appStorage.getItem(sidebarStateKey);
   if (stored === null) return;
   const shouldBeOpen = stored === "true";
   sidebar.classList.toggle("close", !shouldBeOpen);
@@ -17,7 +17,7 @@ const applySidebarState = () => {
 applySidebarState();
 
 const applyThemeState = () => {
-  const stored = localStorage.getItem(themeStateKey);
+  const stored = appStorage.getItem(themeStateKey);
   if (stored === null) return;
   const isDark = stored === "true";
   body.classList.toggle("dark", isDark);
@@ -39,13 +39,13 @@ function getApiBase() {
 toggle?.addEventListener("click", () => {
   sidebar.classList.toggle("close");
   const isOpen = !sidebar.classList.contains("close");
-  localStorage.setItem(sidebarStateKey, String(isOpen));
+  appStorage.setItem(sidebarStateKey, String(isOpen));
 });
 
 modeSwitch?.addEventListener("click", () => {
   body.classList.toggle("dark");
   const isDark = body.classList.contains("dark");
-  localStorage.setItem(themeStateKey, String(isDark));
+  appStorage.setItem(themeStateKey, String(isDark));
   modeText.innerText = isDark ? "Light Mode" : "Dark Mode";
 });
 
@@ -116,7 +116,7 @@ const SESSION_KEY = "dpwh_current_user";
 
 function getCurrentUser() {
   if (window.DPWH_CURRENT_USER) return window.DPWH_CURRENT_USER;
-  const raw = localStorage.getItem(SESSION_KEY) || sessionStorage.getItem(SESSION_KEY);
+  const raw = appStorage.getItem(SESSION_KEY) || sessionStorage.getItem(SESSION_KEY);
   if (!raw) return null;
   try {
     return JSON.parse(raw);
@@ -164,7 +164,7 @@ function canModifyContract(contractId) {
 }
 
 function loadContractFiles() {
-  const raw = localStorage.getItem(contractFilesKey);
+  const raw = appStorage.getItem(contractFilesKey);
   if (!raw) return {};
   try {
     const parsed = JSON.parse(raw);
@@ -175,11 +175,11 @@ function loadContractFiles() {
 }
 
 function saveContractFiles(data) {
-  localStorage.setItem(contractFilesKey, JSON.stringify(data));
+  appStorage.setItem(contractFilesKey, JSON.stringify(data));
 }
 
 function loadContractFilesData() {
-  const raw = localStorage.getItem(contractFilesDataKey);
+  const raw = appStorage.getItem(contractFilesDataKey);
   if (!raw) return {};
   try {
     const parsed = JSON.parse(raw);
@@ -190,7 +190,7 @@ function loadContractFilesData() {
 }
 
 function saveContractFilesData(data) {
-  localStorage.setItem(contractFilesDataKey, JSON.stringify(data));
+  appStorage.setItem(contractFilesDataKey, JSON.stringify(data));
 }
 
 function getFileKey(section, contractId) {

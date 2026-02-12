@@ -9,11 +9,11 @@ const themeStateKey = "darkMode"
 toggle.addEventListener("click", () => {
   sidebar.classList.toggle("close");
   const isOpen = !sidebar.classList.contains("close")
-  localStorage.setItem(sidebarStateKey, String(isOpen))
+  appStorage.setItem(sidebarStateKey, String(isOpen))
 });
 
 const applySidebarState = () => {
-  const stored = localStorage.getItem(sidebarStateKey)
+  const stored = appStorage.getItem(sidebarStateKey)
   if (stored === null) return
   const shouldBeOpen = stored === "true"
   sidebar.classList.toggle("close", !shouldBeOpen)
@@ -22,7 +22,7 @@ const applySidebarState = () => {
 applySidebarState()
 
 const applyThemeState = () => {
-  const stored = localStorage.getItem(themeStateKey)
+  const stored = appStorage.getItem(themeStateKey)
   if (stored === null) return
   const isDark = stored === "true"
   body.classList.toggle("dark", isDark)
@@ -47,7 +47,7 @@ const SESSION_KEY = "dpwh_current_user";
 
 function getCurrentUser() {
   if (window.DPWH_CURRENT_USER) return window.DPWH_CURRENT_USER;
-  const raw = localStorage.getItem(SESSION_KEY) || sessionStorage.getItem(SESSION_KEY);
+  const raw = appStorage.getItem(SESSION_KEY) || sessionStorage.getItem(SESSION_KEY);
   if (!raw) return null;
   try {
     return JSON.parse(raw);
@@ -67,7 +67,7 @@ function getNotificationKey() {
 }
 
 function loadNotifications() {
-  const raw = localStorage.getItem(getNotificationKey());
+  const raw = appStorage.getItem(getNotificationKey());
   if (!raw) return [];
   try {
     const parsed = JSON.parse(raw);
@@ -78,7 +78,7 @@ function loadNotifications() {
 }
 
 function saveNotifications(list) {
-  localStorage.setItem(getNotificationKey(), JSON.stringify(list));
+  appStorage.setItem(getNotificationKey(), JSON.stringify(list));
 }
 
 function formatTimeAgo(value) {
@@ -135,6 +135,7 @@ function attachNotificationBell() {
   if (!btn || !panel) return;
   btn.addEventListener("click", (e) => {
     e.stopPropagation();
+    document.getElementById("profilePanel")?.classList.remove("open");
     panel.classList.toggle("open");
   });
   clearBtn?.addEventListener("click", () => {
@@ -147,6 +148,58 @@ function attachNotificationBell() {
     }
   });
   renderNotificationBell();
+}
+
+function attachProfileMenu() {
+  const btn = document.getElementById("profileBtn");
+  const panel = document.getElementById("profilePanel");
+  const avatar = document.getElementById("profileAvatar");
+  const nameEl = document.getElementById("profileName");
+  const emailEl = document.getElementById("profileEmail");
+  const roleEl = document.getElementById("profileRole");
+  if (!btn || !panel) return;
+
+  const name = String(currentUser?.name || "User").trim() || "User";
+  const email = String(currentUser?.email || "-").trim() || "-";
+  const role = currentUser?.isSuperAdmin
+    ? "Superadmin"
+    : (currentUser?.isAdmin ? "Admin" : "User");
+  const initial = name.charAt(0).toUpperCase() || "U";
+  const profileKey = `dpwh_profile_${String(currentUser?.email || "guest").trim().toLowerCase() || "guest"}`;
+  let photoDataUrl = "";
+  try {
+    const raw = appStorage.getItem(profileKey);
+    const parsed = raw ? JSON.parse(raw) : {};
+    photoDataUrl = String(parsed?.photoDataUrl || "");
+  } catch (err) {
+    photoDataUrl = "";
+  }
+
+  if (avatar) {
+    avatar.textContent = initial;
+    avatar.style.backgroundImage = "";
+    avatar.classList.remove("has-image");
+    if (photoDataUrl) {
+      avatar.textContent = "";
+      avatar.style.backgroundImage = `url("${photoDataUrl}")`;
+      avatar.classList.add("has-image");
+    }
+  }
+  if (nameEl) nameEl.textContent = name;
+  if (emailEl) emailEl.textContent = email;
+  if (roleEl) roleEl.textContent = role;
+
+  btn.addEventListener("click", (e) => {
+    e.stopPropagation();
+    document.getElementById("notifPanel")?.classList.remove("open");
+    panel.classList.toggle("open");
+  });
+
+  document.addEventListener("click", (e) => {
+    if (!panel.contains(e.target) && e.target !== btn) {
+      panel.classList.remove("open");
+    }
+  });
 }
 
 function ensureToastContainer() {
@@ -209,7 +262,7 @@ function isUserInCharge(inChargeData) {
 modeSwitch.addEventListener("click", () => {
   body.classList.toggle("dark");
   const isDark = body.classList.contains("dark")
-  localStorage.setItem(themeStateKey, String(isDark))
+  appStorage.setItem(themeStateKey, String(isDark))
 
   if (modeText) {
     modeText.innerText = isDark ? "Light Mode" : "Dark Mode"
@@ -229,7 +282,7 @@ const expiredProjectsCountEl = document.getElementById("expiredProjectsCount");
 const projectMetaKey = "projectMeta";
 
 function loadProjectMeta() {
-  const raw = localStorage.getItem(projectMetaKey);
+  const raw = appStorage.getItem(projectMetaKey);
   if (!raw) return {};
   try {
     const parsed = JSON.parse(raw);
@@ -502,6 +555,7 @@ window.addEventListener("DOMContentLoaded", () => {
   attachDocumentsCardHoverLists();
   fetchProjectsForDashboard();
   attachNotificationBell();
+  attachProfileMenu();
 });
 document.addEventListener("DOMContentLoaded", () => {
   document.querySelectorAll(".documents-monitoring .doc-item").forEach(item => {
@@ -530,7 +584,7 @@ const contractFilesKey = "contractFiles";
 const contractFilesDataKey = "contractFilesData";
 
 function loadContractFiles() {
-  const raw = localStorage.getItem(contractFilesKey);
+  const raw = appStorage.getItem(contractFilesKey);
   if (!raw) return {};
   try {
     const parsed = JSON.parse(raw);
@@ -541,7 +595,7 @@ function loadContractFiles() {
 }
 
 function loadContractFilesData() {
-  const raw = localStorage.getItem(contractFilesDataKey);
+  const raw = appStorage.getItem(contractFilesDataKey);
   if (!raw) return {};
   try {
     const parsed = JSON.parse(raw);
@@ -800,7 +854,7 @@ async function syncEngineersDirectory() {
     if (!res.ok) throw new Error(`Status ${res.status}`);
     const data = await res.json();
     if (Array.isArray(data?.engineers)) {
-      localStorage.setItem(engineersStorageKey, JSON.stringify(data.engineers));
+      appStorage.setItem(engineersStorageKey, JSON.stringify(data.engineers));
     }
   } catch (err) {
     console.warn("Engineer directory sync failed:", err);
@@ -808,7 +862,7 @@ async function syncEngineersDirectory() {
 }
 
 function getEngineerDirectory() {
-  const raw = localStorage.getItem(engineersStorageKey);
+  const raw = appStorage.getItem(engineersStorageKey);
   if (!raw) return [];
   try {
     const parsed = JSON.parse(raw);
@@ -961,7 +1015,7 @@ function normalizePowItems(value) {
 function getProjectPow(contractId) {
   const key = String(contractId || "").trim().toUpperCase();
   if (!key) return [];
-  const raw = localStorage.getItem(projectPowKey);
+  const raw = appStorage.getItem(projectPowKey);
   if (!raw) return [];
   try {
     const parsed = JSON.parse(raw);
@@ -974,7 +1028,7 @@ function getProjectPow(contractId) {
 function getVariationOrders(contractId) {
   const key = String(contractId || "").trim().toUpperCase();
   if (!key) return [];
-  const raw = localStorage.getItem(variationOrdersKey);
+  const raw = appStorage.getItem(variationOrdersKey);
   if (!raw) return [];
   try {
     const parsed = JSON.parse(raw);
@@ -1044,12 +1098,12 @@ async function renderPowDashboard(contractId) {
         const key = String(contractId || "").trim().toUpperCase();
         if (key) {
           try {
-            const powStore = JSON.parse(localStorage.getItem(projectPowKey) || "{}");
+            const powStore = JSON.parse(appStorage.getItem(projectPowKey) || "{}");
             powStore[key] = remoteOriginal;
-            localStorage.setItem(projectPowKey, JSON.stringify(powStore));
-            const voStore = JSON.parse(localStorage.getItem(variationOrdersKey) || "{}");
+            appStorage.setItem(projectPowKey, JSON.stringify(powStore));
+            const voStore = JSON.parse(appStorage.getItem(variationOrdersKey) || "{}");
             voStore[key] = remoteOrders;
-            localStorage.setItem(variationOrdersKey, JSON.stringify(voStore));
+            appStorage.setItem(variationOrdersKey, JSON.stringify(voStore));
           } catch (err) {
             console.warn("Failed to cache remote POW locally:", err);
           }
@@ -1265,7 +1319,7 @@ function openDetailsModal(row) {
 
   const statusEl = document.getElementById("detailsStatus");
   if (statusEl) {
-    statusEl.innerText = status || "â€”";
+    statusEl.innerText = status || "—";
     statusEl.classList.remove("success", "warning", "danger");
     statusEl.classList.add(statusToTag(status));
   }
@@ -1450,7 +1504,7 @@ function renderGallery(contractId) {
     return;
   }
 
-  const raw = localStorage.getItem('galleryPhotos');
+  const raw = appStorage.getItem('galleryPhotos');
   const all = raw ? JSON.parse(raw) : {};
   const items = Array.isArray(all[key]) ? all[key] : [];
   renderItems(items);
@@ -1476,13 +1530,13 @@ function updatePhotoModal() {
   const dateObj = dateValue ? new Date(dateValue) : null;
   const dateText = dateObj && !Number.isNaN(dateObj.getTime())
     ? dateObj.toLocaleDateString("en-PH")
-    : "—";
+    : "�";
 
   if (photoModalImage) photoModalImage.src = src || '';
   if (photoId) photoId.textContent = `${currentGalleryContract}-photo-${currentGalleryIndex + 1}`;
   if (photoPurpose) photoPurpose.textContent = 'Geotagged Photo';
   if (photoDate) photoDate.textContent = dateText;
-  if (photoLocation) photoLocation.textContent = currentGalleryContract || '—';
+  if (photoLocation) photoLocation.textContent = currentGalleryContract || '�';
   if (photoDownloadBtn) {
     const fallbackName = `${currentGalleryContract}-photo-${currentGalleryIndex + 1}.jpg`;
     photoDownloadBtn.href = src || '#';
@@ -1700,7 +1754,7 @@ function initProjectMap() {
 
   streetLayer = L.tileLayer(
     "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
-    { attribution: "Â© OpenStreetMap contributors" }
+    { attribution: "© OpenStreetMap contributors" }
   ).addTo(projectMap);
 
   satelliteLayer = L.tileLayer(
