@@ -11,6 +11,7 @@
 
   var apiBase = getApiBase();
   var data = Object.create(null);
+  var MIGRATION_FLAG_KEY = "__dpwh_localstorage_migrated_v1";
 
   function safeString(value) {
     return String(value == null ? "" : value);
@@ -43,6 +44,41 @@
     } catch (err) {
       data = Object.create(null);
     }
+  }
+
+  function migrateFromLocalStorageOnce() {
+    if (data[MIGRATION_FLAG_KEY] === "true") return;
+    try {
+      if (!window.localStorage) {
+        data[MIGRATION_FLAG_KEY] = "true";
+        sendRequest("PUT", "/api/client-storage/item", {
+          key: MIGRATION_FLAG_KEY,
+          value: "true"
+        });
+        return;
+      }
+
+      for (var i = 0; i < window.localStorage.length; i += 1) {
+        var key = window.localStorage.key(i);
+        if (!key || key === MIGRATION_FLAG_KEY) continue;
+        if (Object.prototype.hasOwnProperty.call(data, key)) continue;
+        var value = window.localStorage.getItem(key);
+        if (value == null) continue;
+        data[key] = safeString(value);
+        sendRequest("PUT", "/api/client-storage/item", {
+          key: key,
+          value: data[key]
+        });
+      }
+    } catch (err) {
+      // Ignore migration errors and keep app usable.
+    }
+
+    data[MIGRATION_FLAG_KEY] = "true";
+    sendRequest("PUT", "/api/client-storage/item", {
+      key: MIGRATION_FLAG_KEY,
+      value: "true"
+    });
   }
 
   function sendRequest(method, path, body) {
@@ -102,5 +138,6 @@
   });
 
   loadInitialData();
+  migrateFromLocalStorageOnce();
   window.appStorage = appStorage;
 })();
