@@ -56,6 +56,10 @@ function normalizePersonName(value) {
     return String(value || "").trim().toLowerCase();
 }
 
+function toAllCaps(value) {
+    return String(value || "").trim().toUpperCase();
+}
+
 function splitNames(value) {
     return String(value || "")
         .split(/[,/;]+/)
@@ -422,6 +426,8 @@ const downloadContractBtn = document.getElementById("downloadContractInfo");
 let currentDetailsData = null;
 const getDirectionsBtn = document.getElementById("getDirectionsBtn");
 const revisedContractAmountInput = document.getElementById("revisedContractAmount");
+const revisedContractAmountContainer = document.getElementById("revisedContractAmountContainer");
+const toggleRevisedContractAmountBtn = document.getElementById("toggleRevisedContractAmount");
 const revisedPowBody = document.getElementById("revisedPowBody");
 const addRevisedPowRowBtn = document.getElementById("addRevisedPowRow");
 const openVariationOrderBtn = document.getElementById("openVariationOrder");
@@ -599,6 +605,10 @@ function openUpdateModal(row) {
     initRevisedExpirationDates(data.revisedExpirationDates || []);
     updateModal.dataset.contractId = normalizeContractId(data.contractId);
     if (revisedContractAmountInput) revisedContractAmountInput.value = data.revisedContractAmount || "";
+    if (revisedContractAmountContainer) {
+        const hasValue = Boolean(String(data.revisedContractAmount || "").trim());
+        revisedContractAmountContainer.classList.toggle("hidden", !hasValue);
+    }
     initRevisedPow(data.revisedProgramWorks || []);
     updateModal.classList.add("open");
 }
@@ -611,6 +621,8 @@ function closeUpdateModal() {
     if (updateProgressInput) updateProgressInput.value = "";
     if (updateDateInput) updateDateInput.value = "";
     initRevisedExpirationDates([]);
+    if (revisedContractAmountInput) revisedContractAmountInput.value = "";
+    if (revisedContractAmountContainer) revisedContractAmountContainer.classList.add("hidden");
     updateModal.dataset.contractId = "";
 }
 
@@ -1483,12 +1495,12 @@ saveBtn.addEventListener("click", () => {
     }
 
     // STEP 2 DATA (Project In-Charge)
-    const projectEngineer = document.getElementById("projectEngineer").value.trim();
-    const materialsEngineer = document.getElementById("materialsEngineer").value.trim();
-    const projectInspector = document.getElementById("projectInspector").value.trim();
-    const residentEngineer = document.getElementById("residentEngineer").value.trim();
-    const qaInCharge = document.getElementById("qaInCharge").value.trim();
-    const contractorMaterialsEngineer = document.getElementById("contractorMaterialsEngineer").value.trim();
+    const projectEngineer = toAllCaps(document.getElementById("projectEngineer").value);
+    const materialsEngineer = toAllCaps(document.getElementById("materialsEngineer").value);
+    const projectInspector = toAllCaps(document.getElementById("projectInspector").value);
+    const residentEngineer = toAllCaps(document.getElementById("residentEngineer").value);
+    const qaInCharge = toAllCaps(document.getElementById("qaInCharge").value);
+    const contractorMaterialsEngineer = toAllCaps(document.getElementById("contractorMaterialsEngineer").value);
 
     const inChargeData = {
         projectEngineer,
@@ -1563,7 +1575,7 @@ saveBtn.addEventListener("click", () => {
                 expirationDate,
                 location: safeLocation,
                 coordinates: safeCoordinates,
-                revisedExpirationDates,
+                revisedExpirationDates: existingData.revisedExpirationDates || [],
                 programWorks,
                 completionDate,
                 accomplishment: existingData.accomplishment || 0,
@@ -1747,6 +1759,7 @@ async function fetchProjects() {
                                 rowData.status = override.status || rowData.status;
                                 rowData.accomplishment = parsePercent(override.accomplishment);
                                 rowData.completionDate = override.completionDate || rowData.completionDate;
+                                rowData.revisedContractAmount = override.revisedContractAmount || rowData.revisedContractAmount;
                                 rowData.revisedExpirationDates = override.revisedExpirationDates || rowData.revisedExpirationDates;
                         }
                         const pow = getProjectPow(contractId);
@@ -1987,9 +2000,28 @@ tableBody.addEventListener("click", async (e) => {
         const safeCost = escapeHtml(numericCost || rawCost);
         detailsCostEl.innerHTML = `<span class="peso-sign">\u20B1</span><span class="peso-amount">${safeCost}</span>`;
     }
+    const detailsAppropriation = document.getElementById("detailsAppropriation");
+    if (detailsAppropriation) detailsAppropriation.innerText = formatMoneyDisplay(currentDetailsData?.appropriation || "-");
+    const detailsContractCost = document.getElementById("detailsContractCost");
+    if (detailsContractCost) detailsContractCost.innerText = formatMoneyDisplay(currentDetailsData?.contractCost || cost || "-");
+    const detailsApprovedBudgetCost = document.getElementById("detailsApprovedBudgetCost");
+    if (detailsApprovedBudgetCost) detailsApprovedBudgetCost.innerText = formatMoneyDisplay(currentDetailsData?.approvedBudgetCost || "-");
+    const revisedContractBlock = document.getElementById("detailsRevisedContractCostBlock");
+    const detailsRevisedContractCost = document.getElementById("detailsRevisedContractCost");
+    const revisedContractAmount = String(currentDetailsData?.revisedContractAmount || "").trim();
+    if (revisedContractBlock) revisedContractBlock.classList.toggle("hidden", !revisedContractAmount);
+    if (detailsRevisedContractCost) detailsRevisedContractCost.innerText = revisedContractAmount ? formatMoneyDisplay(revisedContractAmount) : "-";
     document.getElementById("detailsCompletion").innerText =
         getCompletionDisplay(row.dataset.accomplishment || completion, row.dataset.completionDate || completion);
-    document.getElementById("detailsStatus").innerText = status || "—";
+    const revisedExpirationBlock = document.getElementById("detailsRevisedExpirationBlock");
+    const detailsRevisedExpiration = document.getElementById("detailsRevisedExpiration");
+    const revisedDates = Array.isArray(currentDetailsData?.revisedExpirationDates)
+        ? currentDetailsData.revisedExpirationDates.filter(Boolean)
+        : [];
+    const latestRevisedExpiration = revisedDates.length ? revisedDates[revisedDates.length - 1] : "";
+    if (revisedExpirationBlock) revisedExpirationBlock.classList.toggle("hidden", !latestRevisedExpiration);
+    if (detailsRevisedExpiration) detailsRevisedExpiration.innerText = latestRevisedExpiration ? formatDateLong(latestRevisedExpiration) : "-";
+    document.getElementById("detailsStatus").innerText = status || "â€”";
     const startDate = row.dataset.startDate || "-";
     const expirationDate = row.dataset.expirationDate || "-";
     document.getElementById("detailsStart").innerText = formatDateLong(startDate);
@@ -2159,6 +2191,12 @@ toggleRevisedExpirationBtn?.addEventListener("click", () => {
     addRevisedExpirationRow(currentCount + 1, "");
     const inputs = revisedExpirationContainer.querySelectorAll("input[type=\"date\"]");
     inputs[inputs.length - 1]?.focus();
+});
+
+toggleRevisedContractAmountBtn?.addEventListener("click", () => {
+    if (!revisedContractAmountContainer) return;
+    revisedContractAmountContainer.classList.remove("hidden");
+    revisedContractAmountInput?.focus();
 });
 
 // Revised Program of Works (Update modal)
@@ -2475,13 +2513,13 @@ function updatePhotoModal() {
     const dateObj = dateValue ? new Date(dateValue) : null;
     const dateText = dateObj && !Number.isNaN(dateObj.getTime())
         ? dateObj.toLocaleDateString("en-PH")
-        : "�";
+        : "—";
 
     if (photoModalImage) photoModalImage.src = src || "";
     if (photoId) photoId.textContent = `${currentGalleryContract}-photo-${currentGalleryIndex + 1}`;
     if (photoPurpose) photoPurpose.textContent = "Geotagged Photo";
     if (photoDate) photoDate.textContent = dateText;
-    if (photoLocation) photoLocation.textContent = currentGalleryContract || "�";
+    if (photoLocation) photoLocation.textContent = currentGalleryContract || "—";
 
     if (photoDownloadBtn) {
         const fallbackName = `${currentGalleryContract}-photo-${currentGalleryIndex + 1}.jpg`;
@@ -3195,7 +3233,7 @@ function initProjectMap() {
 
     const streetLayer = L.tileLayer(
         "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
-        { attribution: "© OpenStreetMap contributors" }
+        { attribution: "Â© OpenStreetMap contributors" }
     ).addTo(projectMap);
 
     const satelliteLayer = L.tileLayer(
@@ -3235,7 +3273,7 @@ let projectMarker = null;
 // STREET LAYER
 const streetLayer = L.tileLayer(
     "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
-    { attribution: "© OpenStreetMap contributors" }
+    { attribution: "Â© OpenStreetMap contributors" }
 );
 
 // SATELLITE LAYER
@@ -3342,6 +3380,7 @@ tabButtons.forEach(btn => {
         }
     });
 });
+
 
 
 
