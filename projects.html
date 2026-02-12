@@ -353,6 +353,18 @@
                     <div class="form-group hidden" id="revisedExpirationContainer"></div>
 
                     <div class="form-group">
+                        <button class="btn secondary" id="toggleRevisedContractAmount" type="button">
+                            <i class='bx bx-money'></i>
+                            Add Revised Contract Cost
+                        </button>
+                    </div>
+
+                    <div class="form-group hidden" id="revisedContractAmountContainer">
+                        <label for="revisedContractAmount">Revised Contract Cost</label>
+                        <input id="revisedContractAmount" type="text" class="money-input" placeholder="P 0.00" inputmode="decimal">
+                    </div>
+
+                    <div class="form-group">
                         <button class="btn secondary" id="openVariationOrder" type="button">
                             <i class='bx bx-git-branch'></i>
                             Add Variation Order
@@ -430,6 +442,28 @@
 
                             <div class="info-grid">
                                 <div class="info-block">
+                                    <label>Appropriation</label>
+                                    <p id="detailsAppropriation"></p>
+                                </div>
+
+                                <div class="info-block">
+                                    <label>Contract Cost</label>
+                                    <p id="detailsContractCost"></p>
+                                </div>
+
+                                <div class="info-block">
+                                    <label>Approved Budget Cost</label>
+                                    <p id="detailsApprovedBudgetCost"></p>
+                                </div>
+
+                                <div class="info-block hidden" id="detailsRevisedContractCostBlock">
+                                    <label>Revised Contract Cost</label>
+                                    <p id="detailsRevisedContractCost"></p>
+                                </div>
+                            </div>
+
+                            <div class="info-grid">
+                                <div class="info-block">
                                     <label>Start Date</label>
                                     <p id="detailsStart"></p>
                                 </div>
@@ -442,6 +476,11 @@
                                 <div class="info-block">
                                     <label>Completion Date</label>
                                     <p id="detailsCompletion"></p>
+                                </div>
+
+                                <div class="info-block hidden" id="detailsRevisedExpirationBlock">
+                                    <label>Revised Expiration Date</label>
+                                    <p id="detailsRevisedExpiration"></p>
                                 </div>
                             </div>
 
