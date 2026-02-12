@@ -1,12 +1,13 @@
 const USERS_KEY = "dpwh_users";
+const ADMIN_EMAILS_KEY = "dpwh_admin_emails";
 const SUPERADMIN_EMAILS = [
   "krong0814@gmail.com"
 ];
-const ADMIN_EMAILS = [
-  ...SUPERADMIN_EMAILS,
+const DEFAULT_MANAGED_ADMIN_EMAILS = [
   "lemuel.malinao@gmail.com",
   "alanpancitojr@gmail.com"
 ];
+
 const body = document.querySelector("body");
 const sidebar = body?.querySelector(".sidebar");
 const toggle = body?.querySelector(".toggle");
@@ -22,6 +23,10 @@ const pendingCount = document.getElementById("pendingCount");
 const approvedCount = document.getElementById("approvedCount");
 const blockedCount = document.getElementById("blockedCount");
 const totalCount = document.getElementById("totalCount");
+
+const adminEmailInput = document.getElementById("adminEmailInput");
+const addAdminEmailBtn = document.getElementById("addAdminEmailBtn");
+const adminEmailList = document.getElementById("adminEmailList");
 
 const applySidebarState = () => {
   if (!sidebar) return;
@@ -59,14 +64,58 @@ function normalizeEmail(value) {
   return String(value || "").trim().toLowerCase();
 }
 
-function isAdminEmail(email) {
-  const normalized = normalizeEmail(email);
-  return ADMIN_EMAILS.some(admin => normalizeEmail(admin) === normalized);
+function isValidEmail(email) {
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
 }
 
 function isSuperAdminEmail(email) {
   const normalized = normalizeEmail(email);
   return SUPERADMIN_EMAILS.some(admin => normalizeEmail(admin) === normalized);
+}
+
+function getManagedAdminEmails() {
+  const raw = appStorage.getItem(ADMIN_EMAILS_KEY);
+  if (!raw) return [...DEFAULT_MANAGED_ADMIN_EMAILS];
+  try {
+    const parsed = JSON.parse(raw);
+    if (!Array.isArray(parsed)) return [...DEFAULT_MANAGED_ADMIN_EMAILS];
+    const normalized = parsed
+      .map(normalizeEmail)
+      .filter(Boolean)
+      .filter(email => !isSuperAdminEmail(email));
+    return Array.from(new Set(normalized));
+  } catch (err) {
+    return [...DEFAULT_MANAGED_ADMIN_EMAILS];
+  }
+}
+
+function saveManagedAdminEmails(list) {
+  const normalized = Array.from(new Set(
+    (Array.isArray(list) ? list : [])
+      .map(normalizeEmail)
+      .filter(Boolean)
+      .filter(email => !isSuperAdminEmail(email))
+  ));
+  appStorage.setItem(ADMIN_EMAILS_KEY, JSON.stringify(normalized));
+}
+
+function ensureManagedAdminEmails() {
+  const raw = appStorage.getItem(ADMIN_EMAILS_KEY);
+  if (raw) return;
+  saveManagedAdminEmails(DEFAULT_MANAGED_ADMIN_EMAILS);
+}
+
+function getAdminEmails() {
+  const merged = [
+    ...SUPERADMIN_EMAILS.map(normalizeEmail),
+    ...getManagedAdminEmails().map(normalizeEmail)
+  ].filter(Boolean);
+  return Array.from(new Set(merged));
+}
+
+function isAdminEmail(email) {
+  const normalized = normalizeEmail(email);
+  return getAdminEmails().some(admin => normalizeEmail(admin) === normalized);
 }
 
 function loadUsers() {
@@ -82,6 +131,50 @@ function loadUsers() {
 
 function saveUsers(list) {
   appStorage.setItem(USERS_KEY, JSON.stringify(list));
+}
+
+function syncUserRoleByEmail(email, makeAdmin) {
+  const target = normalizeEmail(email);
+  const users = loadUsers();
+  const idx = users.findIndex(u => normalizeEmail(u?.email) === target);
+  if (idx === -1) return;
+  const user = users[idx];
+  if (isSuperAdminEmail(target)) {
+    user.role = "superadmin";
+    user.status = "approved";
+  } else if (makeAdmin) {
+    user.role = "admin";
+    user.status = "approved";
+  } else if (String(user.role || "").toLowerCase() === "admin") {
+    user.role = "user";
+  }
+  user.updatedAt = new Date().toISOString();
+  saveUsers(users);
+}
+
+function updateCurrentSessionRole(email, makeAdmin) {
+  const target = normalizeEmail(email);
+  const update = (raw) => {
+    if (!raw) return null;
+    try {
+      const session = JSON.parse(raw);
+      if (normalizeEmail(session?.email) !== target) return raw;
+      const isSuperAdmin = Boolean(session?.isSuperAdmin || isSuperAdminEmail(target));
+      const isAdmin = isSuperAdmin || Boolean(makeAdmin);
+      const role = isSuperAdmin ? "superadmin" : (isAdmin ? "admin" : "user");
+      return JSON.stringify({ ...session, isAdmin, isSuperAdmin, role });
+    } catch (err) {
+      return raw;
+    }
+  };
+
+  const local = appStorage.getItem("dpwh_current_user");
+  const nextLocal = update(local);
+  if (nextLocal !== null && nextLocal !== local) appStorage.setItem("dpwh_current_user", nextLocal);
+
+  const session = sessionStorage.getItem("dpwh_current_user");
+  const nextSession = update(session);
+  if (nextSession !== null && nextSession !== session) sessionStorage.setItem("dpwh_current_user", nextSession);
 }
 
 function updateUserStatus(email, status) {
@@ -217,4 +310,91 @@ function renderUsers() {
   renderSection(blockedList, blocked, "No blocked users.");
 }
 
-document.addEventListener("DOMContentLoaded", renderUsers);
+function renderAdminEmails() {
+  if (!adminEmailList) return;
+  adminEmailList.innerHTML = "";
+  const list = getAdminEmails().slice().sort();
+  if (!list.length) {
+    const empty = document.createElement("div");
+    empty.className = "admin-empty";
+    empty.textContent = "No admin emails yet.";
+    adminEmailList.appendChild(empty);
+    return;
+  }
+
+  list.forEach((emailValue) => {
+    const isSuper = isSuperAdminEmail(emailValue);
+    const item = document.createElement("div");
+    item.className = "admin-item";
+
+    const info = document.createElement("div");
+    const title = document.createElement("h4");
+    title.textContent = emailValue;
+    const subtitle = document.createElement("p");
+    subtitle.textContent = isSuper ? "Superadmin (fixed)" : "Admin email";
+    info.appendChild(title);
+    info.appendChild(subtitle);
+    item.appendChild(info);
+
+    const actions = document.createElement("div");
+    actions.className = "admin-actions";
+    if (!isSuper) {
+      const removeBtn = document.createElement("button");
+      removeBtn.className = "admin-btn secondary";
+      removeBtn.textContent = "Remove";
+      removeBtn.addEventListener("click", () => {
+        const managed = getManagedAdminEmails().filter(e => normalizeEmail(e) !== normalizeEmail(emailValue));
+        saveManagedAdminEmails(managed);
+        syncUserRoleByEmail(emailValue, false);
+        updateCurrentSessionRole(emailValue, false);
+        renderAdminEmails();
+        renderUsers();
+      });
+      actions.appendChild(removeBtn);
+    }
+    item.appendChild(actions);
+    adminEmailList.appendChild(item);
+  });
+}
+
+function addAdminEmail() {
+  const email = normalizeEmail(adminEmailInput?.value);
+  if (!email) {
+    alert("Please enter an email.");
+    return;
+  }
+  if (!isValidEmail(email)) {
+    alert("Please enter a valid email.");
+    return;
+  }
+  if (isSuperAdminEmail(email)) {
+    alert("This email is already a fixed superadmin.");
+    return;
+  }
+  const managed = getManagedAdminEmails();
+  if (managed.includes(email)) {
+    alert("This email is already in the admin list.");
+    return;
+  }
+
+  managed.push(email);
+  saveManagedAdminEmails(managed);
+  syncUserRoleByEmail(email, true);
+  updateCurrentSessionRole(email, true);
+  if (adminEmailInput) adminEmailInput.value = "";
+  renderAdminEmails();
+  renderUsers();
+}
+
+document.addEventListener("DOMContentLoaded", () => {
+  ensureManagedAdminEmails();
+  renderAdminEmails();
+  renderUsers();
+  addAdminEmailBtn?.addEventListener("click", addAdminEmail);
+  adminEmailInput?.addEventListener("keydown", (event) => {
+    if (event.key === "Enter") {
+      event.preventDefault();
+      addAdminEmail();
+    }
+  });
+});
