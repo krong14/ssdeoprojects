@@ -1341,12 +1341,25 @@ function openDetailsModal(row) {
   if (detailsContractCost) detailsContractCost.innerText = formatMoneyDisplay(currentDetailsData?.contractCost || "-");
   const detailsApprovedBudgetCost = document.getElementById("detailsApprovedBudgetCost");
   if (detailsApprovedBudgetCost) detailsApprovedBudgetCost.innerText = formatMoneyDisplay(currentDetailsData?.approvedBudgetCost || "-");
+  const isMissingRevisedValue = (value) => {
+    const normalized = String(value ?? "").trim().toLowerCase();
+    return !normalized
+      || normalized === "-"
+      || normalized === "\u2014"
+      || normalized === "n/a"
+      || normalized === "na"
+      || normalized === "none"
+      || normalized === "null"
+      || normalized === "undefined";
+  };
+
   const revisedContractBlock = document.getElementById("detailsRevisedContractCostBlock");
   const detailsRevisedContractCost = document.getElementById("detailsRevisedContractCost");
   const revisedContractAmountValue = String(currentDetailsData?.revisedContractAmount || "").trim();
-  if (revisedContractBlock) revisedContractBlock.classList.toggle("hidden", !revisedContractAmountValue);
+  const hasRevisedContractAmount = !isMissingRevisedValue(revisedContractAmountValue);
+  if (revisedContractBlock) revisedContractBlock.classList.toggle("hidden", !hasRevisedContractAmount);
   if (detailsRevisedContractCost) {
-    detailsRevisedContractCost.innerText = revisedContractAmountValue
+    detailsRevisedContractCost.innerText = hasRevisedContractAmount
       ? formatMoneyDisplay(revisedContractAmountValue)
       : "-";
   }
@@ -1355,12 +1368,13 @@ function openDetailsModal(row) {
   const revisedExpirationBlock = document.getElementById("detailsRevisedExpirationBlock");
   const detailsRevisedExpiration = document.getElementById("detailsRevisedExpiration");
   const revisedDates = Array.isArray(currentDetailsData?.revisedExpirationDates)
-    ? currentDetailsData.revisedExpirationDates.filter(Boolean)
+    ? currentDetailsData.revisedExpirationDates.filter(value => !isMissingRevisedValue(value))
     : [];
   const latestRevisedExpiration = revisedDates.length ? revisedDates[revisedDates.length - 1] : "";
-  if (revisedExpirationBlock) revisedExpirationBlock.classList.toggle("hidden", !latestRevisedExpiration);
+  const hasRevisedExpiration = !isMissingRevisedValue(latestRevisedExpiration);
+  if (revisedExpirationBlock) revisedExpirationBlock.classList.toggle("hidden", !hasRevisedExpiration);
   if (detailsRevisedExpiration) {
-    detailsRevisedExpiration.innerText = latestRevisedExpiration
+    detailsRevisedExpiration.innerText = hasRevisedExpiration
       ? formatDateLong(latestRevisedExpiration)
       : "-";
   }
