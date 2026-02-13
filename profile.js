@@ -16,6 +16,7 @@ function getApiBase() {
 
 const apiBase = getApiBase();
 const SESSION_KEY = "dpwh_current_user";
+const USERS_KEY = "dpwh_users";
 let assignedProjectData = [];
 let assignedDocumentsCount = 0;
 const DESIGNATION_OPTIONS = [
@@ -40,6 +41,26 @@ const currentUser = getCurrentUser();
 
 function normalizeEmail(value) {
   return String(value || "").trim().toLowerCase();
+}
+
+function loadUsers() {
+  const raw = appStorage.getItem(USERS_KEY);
+  if (!raw) return [];
+  try {
+    const parsed = JSON.parse(raw);
+    return Array.isArray(parsed) ? parsed : [];
+  } catch (err) {
+    return [];
+  }
+}
+
+function getEmployeeCodeForCurrentUser() {
+  const sessionCode = String(currentUser?.employeeCode || "").trim();
+  if (sessionCode) return sessionCode;
+  const email = normalizeEmail(currentUser?.email || "");
+  if (!email) return "";
+  const user = loadUsers().find(item => normalizeEmail(item?.email || "") === email);
+  return String(user?.employeeCode || "").trim();
 }
 
 function profileStorageKey() {
@@ -373,20 +394,42 @@ modeSwitch?.addEventListener("click", () => {
 
 function splitNames(value) {
   return String(value || "")
-    .split(/[,/;]+/)
+    .split(/[,/;&]+|\band\b/gi)
     .map(part => part.trim())
     .filter(Boolean);
 }
 
 function normalizeName(value) {
-  return String(value || "").trim().toLowerCase();
+  return String(value || "")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-zA-Z0-9\s]/g, " ")
+    .toLowerCase()
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function toSignificantNameTokens(value) {
+  return normalizeName(value)
+    .split(" ")
+    .filter(token => token.length > 1);
 }
 
 function userMatchesName(value) {
   const userName = String(currentUser?.name || "").trim();
   if (!userName) return false;
   const target = normalizeName(userName);
-  return splitNames(value).some(name => normalizeName(name) === target);
+  const targetTokens = toSignificantNameTokens(userName);
+  return splitNames(value).some(name => {
+    const candidate = normalizeName(name);
+    if (!candidate) return false;
+    if (candidate === target) return true;
+    if (candidate.includes(target) || target.includes(candidate)) return true;
+    const candidateTokens = toSignificantNameTokens(name);
+    if (!targetTokens.length || !candidateTokens.length) return false;
+    return targetTokens.every(token => candidateTokens.includes(token))
+      || candidateTokens.every(token => targetTokens.includes(token));
+  });
 }
 
 function getMatchedRoles(project) {
@@ -394,6 +437,9 @@ function getMatchedRoles(project) {
   if (userMatchesName(project["PROJECT ENGINEER"])) roles.push("Project Engineer");
   if (userMatchesName(project["PROJECT INSPECTOR"])) roles.push("Project Inspector");
   if (userMatchesName(project["MATERIALS ENGINEER"])) roles.push("Materials Engineer");
+  if (userMatchesName(project["RESIDENT ENGINEER"])) roles.push("Resident Engineer");
+  if (userMatchesName(project["QUALITY ASSURANCE IN-CHARGE"])) roles.push("QA In-Charge");
+  if (userMatchesName(project["CONTRACTORS MATERIALS ENGINEER"])) roles.push("Contractor's Materials Engineer");
   return roles;
 }
 
@@ -476,6 +522,7 @@ async function loadAssignedProjects() {
 function renderProfile() {
   const name = String(currentUser?.name || "User").trim() || "User";
   const email = String(currentUser?.email || "-").trim() || "-";
+  const employeeCode = getEmployeeCodeForCurrentUser() || "-";
   const role = currentUser?.isSuperAdmin
     ? "Superadmin"
     : (currentUser?.isAdmin ? "Admin" : "User");
@@ -484,11 +531,13 @@ function renderProfile() {
 
   const nameEl = document.getElementById("profileName");
   const emailEl = document.getElementById("profileEmail");
+  const employeeCodeEl = document.getElementById("profileEmployeeCode");
   const roleEl = document.getElementById("profileRole");
   const photoEl = document.getElementById("profilePhoto");
 
   if (nameEl) nameEl.textContent = name;
   if (emailEl) emailEl.textContent = email;
+  if (employeeCodeEl) employeeCodeEl.textContent = employeeCode;
   if (roleEl) roleEl.textContent = role;
   if (photoEl) {
     photoEl.textContent = initial;
