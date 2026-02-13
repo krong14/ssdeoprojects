@@ -1586,12 +1586,13 @@ body.dark .materials-dropdown {
 /* ===============================================================================================*/
 .contracts-table-wrapper {
   margin: 20px 40px;
-  background: var(--primary-color-light);
+  background: var(--sidebar-color);
   border-radius: 12px;
   box-shadow: var(--shadow-soft);
   overflow-x: auto;
   color: var(--text-color);
 }
+
 
 .contracts-table {
   width: 100%;
@@ -1617,6 +1618,10 @@ body.dark .materials-dropdown {
 
 .contracts-table td:hover {
   cursor: pointer;
+}
+
+.contracts-table tr:hover {
+  background-color: var(--bg-muted);
 }
 .contract-category {
   font-size: 12px;
