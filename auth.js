@@ -25,6 +25,258 @@ const SECTION_ALIASES = Object.freeze({
   "Contractor Side": "Contractor Side",
   "Administration": "Administration"
 });
+const DPWH_REGIONS = Object.freeze([
+  "NCR",
+  "CAR",
+  "Region I",
+  "Region II",
+  "Region III",
+  "Region IV-A",
+  "Region IV-B",
+  "Region V",
+  "Region VI",
+  "NIR",
+  "Region VII",
+  "Region VIII",
+  "Region IX",
+  "Region X",
+  "Region XI",
+  "Region XII",
+  "Region XIII"
+]);
+const DPWH_OFFICES_BY_REGION = Object.freeze({
+  "NCR": [
+    "Las Pinas-Muntinlupa District Engineering Office",
+    "Malabon-Navotas District Engineering Office",
+    "Metro Manila 1st District Engineering Office",
+    "Metro Manila 2nd District Engineering Office",
+    "Metro Manila 3rd District Engineering Office",
+    "North Manila District Engineering Office",
+    "Quezon City 1st District Engineering Office",
+    "Quezon City 2nd District Engineering Office",
+    "South Manila District Engineering Office"
+  ],
+  "CAR": [
+    "Abra District Engineering Office",
+    "Apayao 1st District Engineering Office",
+    "Apayao 2nd District Engineering Office",
+    "Baguio City District Engineering Office",
+    "Benguet 1st District Engineering Office",
+    "Benguet 2nd District Engineering Office",
+    "Ifugao 1st District Engineering Office",
+    "Ifugao 2nd District Engineering Office",
+    "Lower Kalinga District Engineering Office",
+    "Mountain Province 1st District Engineering Office",
+    "Mountain Province 2nd District Engineering Office",
+    "Upper Kalinga District Engineering Office"
+  ],
+  "Region I": [
+    "Ilocos Norte 1st District Engineering Office",
+    "Ilocos Norte 2nd District Engineering Office",
+    "Ilocos Sur 1st District Engineering Office",
+    "Ilocos Sur 2nd District Engineering Office",
+    "La Union 1st District Engineering Office",
+    "La Union 2nd District Engineering Office",
+    "Pangasinan 1st District Engineering Office",
+    "Pangasinan 2nd District Engineering Office",
+    "Pangasinan 3rd District Engineering Office",
+    "Pangasinan 4th District Engineering Office"
+  ],
+  "Region II": [
+    "Batanes District Engineering Office",
+    "Cagayan 1st District Engineering Office",
+    "Cagayan 2nd District Engineering Office",
+    "Cagayan 3rd District Engineering Office",
+    "Isabela 1st District Engineering Office",
+    "Isabela 2nd District Engineering Office",
+    "Isabela 3rd District Engineering Office",
+    "Isabela 4th District Engineering Office",
+    "Nueva Vizcaya 1st District Engineering Office",
+    "Nueva Vizcaya 2nd District Engineering Office",
+    "Quirino District Engineering Office"
+  ],
+  "Region III": [
+    "Aurora District Engineering Office",
+    "Bataan 1st District Engineering Office",
+    "Bataan 2nd District Engineering Office",
+    "Bataan 3rd District Engineering Office",
+    "Bulacan 1st District Engineering Office",
+    "Bulacan 2nd District Engineering Office",
+    "Bulacan 3rd District Engineering Office",
+    "Nueva Ecija 1st District Engineering Office",
+    "Nueva Ecija 2nd District Engineering Office",
+    "Pampanga 1st District Engineering Office",
+    "Pampanga 2nd District Engineering Office",
+    "Pampanga 3rd District Engineering Office",
+    "Tarlac 1st District Engineering Office",
+    "Tarlac 2nd District Engineering Office",
+    "Zambales 1st District Engineering Office",
+    "Zambales 2nd District Engineering Office"
+  ],
+  "Region IV-A": [
+    "Batangas 1st District Engineering Office",
+    "Batangas 2nd District Engineering Office",
+    "Batangas 3rd District Engineering Office",
+    "Batangas 4th District Engineering Office",
+    "Cavite 1st District Engineering Office",
+    "Cavite 2nd District Engineering Office",
+    "Cavite 3rd District Engineering Office",
+    "Laguna 1st District Engineering Office",
+    "Laguna 2nd District Engineering Office",
+    "Laguna 3rd District Engineering Office",
+    "Quezon 1st District Engineering Office",
+    "Quezon 2nd District Engineering Office",
+    "Quezon 3rd District Engineering Office",
+    "Quezon 4th District Engineering Office",
+    "Rizal 1st District Engineering Office",
+    "Rizal 2nd District Engineering Office"
+  ],
+  "Region IV-B": [
+    "Marinduque District Engineering Office",
+    "Mindoro Occidental District Engineering Office",
+    "Mindoro Oriental District Engineering Office",
+    "Palawan 1st District Engineering Office",
+    "Palawan 2nd District Engineering Office",
+    "Palawan 3rd District Engineering Office",
+    "Romblon District Engineering Office",
+    "Southern Mindoro District Engineering Office"
+  ],
+  "Region V": [
+    "Albay 1st District Engineering Office",
+    "Albay 2nd District Engineering Office",
+    "Albay 3rd District Engineering Office",
+    "Camarines Norte District Engineering Office",
+    "Camarines Norte Sub-District Engineering Office",
+    "Camarines Sur 1st District Engineering Office",
+    "Camarines Sur 2nd District Engineering Office",
+    "Camarines Sur 3rd District Engineering Office",
+    "Camarines Sur 4th District Engineering Office",
+    "Camarines Sur 5th District Engineering Office",
+    "Catanduanes District Engineering Office",
+    "Masbate 1st District Engineering Office",
+    "Masbate 2nd District Engineering Office",
+    "Masbate 3rd District Engineering Office",
+    "Sorsogon 1st District Engineering Office",
+    "Sorsogon 2nd District Engineering Office"
+  ],
+  "Region VI": [
+    "Aklan District Engineering Office",
+    "Antique District Engineering Office",
+    "Capiz 1st District Engineering Office",
+    "Capiz 2nd District Engineering Office",
+    "Guimaras District Engineering Office",
+    "Iloilo 1st District Engineering Office",
+    "Iloilo 2nd District Engineering Office",
+    "Iloilo 3rd District Engineering Office",
+    "Iloilo 4th District Engineering Office",
+    "Iloilo 6th District Engineering Office",
+    "Iloilo City District Engineering Office"
+  ],
+  "NIR": [
+    "Bacolod City District Engineering Office",
+    "Negros Occidental 1st District Engineering Office",
+    "Negros Occidental 2nd District Engineering Office",
+    "Negros Occidental 3rd District Engineering Office",
+    "Negros Occidental 4th District Engineering Office",
+    "Negros Occidental 5th District Engineering Office",
+    "Negros Oriental 1st District Engineering Office",
+    "Negros Oriental 2nd District Engineering Office",
+    "Negros Oriental 3rd District Engineering Office",
+    "Siquijor District Engineering Office"
+  ],
+  "Region VII": [
+    "Bohol 1st District Engineering Office",
+    "Bohol 2nd District Engineering Office",
+    "Bohol 3rd District Engineering Office",
+    "Cebu 1st District Engineering Office",
+    "Cebu 2nd District Engineering Office",
+    "Cebu 3rd District Engineering Office",
+    "Cebu 4th District Engineering Office",
+    "Cebu 5th District Engineering Office",
+    "Cebu 6th District Engineering Office",
+    "Cebu 7th District Engineering Office",
+    "Cebu City District Engineering Office"
+  ],
+  "Region VIII": [
+    "Biliran District Engineering Office",
+    "Eastern Samar District Engineering Office",
+    "Leyte 1st District Engineering Office",
+    "Leyte 2nd District Engineering Office",
+    "Leyte 3rd District Engineering Office",
+    "Leyte 4th District Engineering Office",
+    "Leyte 5th District Engineering Office",
+    "Northern Samar 1st District Engineering Office",
+    "Northern Samar 2nd District Engineering Office",
+    "Samar 1st District Engineering Office",
+    "Samar 2nd District Engineering Office",
+    "Southern Leyte 1st District Engineering Office",
+    "Southern Leyte 2nd District Engineering Office",
+    "Tacloban City District Engineering Office"
+  ],
+  "Region IX": [
+    "Isabela City District Engineering Office",
+    "Zamboanga City 1st District Engineering Office",
+    "Zamboanga City 2nd District Engineering Office",
+    "Zamboanga del Norte 1st District Engineering Office",
+    "Zamboanga del Norte 2nd District Engineering Office",
+    "Zamboanga del Norte 3rd District Engineering Office",
+    "Zamboanga del Norte 4th District Engineering Office",
+    "Zamboanga del Sur 1st District Engineering Office",
+    "Zamboanga del Sur 2nd District Engineering Office",
+    "Zamboanga Sibugay 1st District Engineering Office",
+    "Zamboanga Sibugay 2nd District Engineering Office"
+  ],
+  "Region X": [
+    "Bukidnon 1st District Engineering Office",
+    "Bukidnon 2nd District Engineering Office",
+    "Bukidnon 3rd District Engineering Office",
+    "Bukidnon 4th District Engineering Office",
+    "Cagayan de Oro City 1st District Engineering Office",
+    "Cagayan de Oro City 2nd District Engineering Office",
+    "Camiguin District Engineering Office",
+    "Iligan City District Engineering Office",
+    "Lanao del Norte 1st District Engineering Office",
+    "Lanao del Norte 2nd District Engineering Office",
+    "Misamis Occidental 1st District Engineering Office",
+    "Misamis Occidental 2nd District Engineering Office",
+    "Misamis Oriental 1st District Engineering Office",
+    "Misamis Oriental 2nd District Engineering Office"
+  ],
+  "Region XI": [
+    "Davao City 2nd District Engineering Office",
+    "Davao City 3rd District Engineering Office",
+    "Davao City District Engineering Office",
+    "Davao de Oro 1st District Engineering Office",
+    "Davao de Oro 2nd District Engineering Office",
+    "Davao del Norte 2nd District Engineering Office",
+    "Davao del Norte District Engineering Office",
+    "Davao del Sur District Engineering Office",
+    "Davao Occidental District Engineering Office",
+    "Davao Oriental 1st District Engineering Office",
+    "Davao Oriental 2nd District Engineering Office"
+  ],
+  "Region XII": [
+    "Cotabato 1st District Engineering Office",
+    "Cotabato 2nd District Engineering Office",
+    "Cotabato 3rd District Engineering Office",
+    "Sarangani District Engineering Office",
+    "South Cotabato 1st District Engineering Office",
+    "South Cotabato 2nd District Engineering Office",
+    "Sultan Kudarat 1st District Engineering Office",
+    "Sultan Kudarat 2nd District Engineering Office"
+  ],
+  "Region XIII": [
+    "Agusan del Norte District Engineering Office",
+    "Agusan del Sur 1st District Engineering Office",
+    "Agusan del Sur 2nd District Engineering Office",
+    "Butuan City District Engineering Office",
+    "Dinagat Islands District Engineering Office",
+    "Surigao del Norte 1st District Engineering Office",
+    "Surigao del Norte 2nd District Engineering Office",
+    "Surigao del Sur 1st District Engineering Office",
+    "Surigao del Sur 2nd District Engineering Office"
+  ]
+});
 
 function isSuperAdminEmail(email) {
   const normalized = normalizeEmail(email);
@@ -187,6 +439,8 @@ function ensureSuperAdminUser() {
       users.push({
         name: "Super Admin",
         email: normalizedEmail,
+        region: "NCR",
+        office: "",
         section: "Administration",
         password: "",
         status: "approved",
@@ -235,6 +489,28 @@ function normalizeEmail(value) {
   return String(value || "").trim().toLowerCase();
 }
 
+function setSelectOptions(selectEl, values, placeholder) {
+  if (!selectEl) return;
+  const items = Array.isArray(values) ? values : [];
+  const first = `<option value="">${placeholder}</option>`;
+  selectEl.innerHTML = first + items.map(item => `<option value="${item}">${item}</option>`).join("");
+}
+
+function initRegionOfficeSelectors(regionInput, officeInput) {
+  if (!regionInput || !officeInput) return;
+
+  setSelectOptions(regionInput, DPWH_REGIONS, "Select region");
+  setSelectOptions(officeInput, [], "Select office");
+  officeInput.disabled = true;
+
+  regionInput.addEventListener("change", () => {
+    const region = String(regionInput.value || "").trim();
+    const offices = DPWH_OFFICES_BY_REGION[region] || [];
+    setSelectOptions(officeInput, offices, "Select office");
+    officeInput.disabled = offices.length === 0;
+  });
+}
+
 function storeSession(user, remember) {
   const isSuperAdmin = isSuperAdminEmail(user.email);
   const isAdmin = isSuperAdmin || isAdminEmail(user.email);
@@ -244,6 +520,8 @@ function storeSession(user, remember) {
     email: user.email,
     name: user.name,
     section: user.section,
+    region: user.region || "",
+    office: user.office || "",
     sectionCode: getSectionCode(user.section),
     role: isSuperAdmin ? "superadmin" : (isAdmin ? "admin" : "user"),
     isAdmin,
@@ -310,10 +588,14 @@ function initSignup() {
   const form = document.getElementById("signupForm");
   const nameInput = document.getElementById("signupName");
   const emailInput = document.getElementById("signupEmail");
+  const regionInput = document.getElementById("signupRegion");
+  const officeInput = document.getElementById("signupOffice");
   const sectionInput = document.getElementById("signupSection");
   const passInput = document.getElementById("signupPassword");
   const confirmInput = document.getElementById("signupConfirm");
   const messageEl = document.getElementById("formMessage");
+
+  initRegionOfficeSelectors(regionInput, officeInput);
 
   form?.addEventListener("submit", (e) => {
     e.preventDefault();
@@ -321,11 +603,13 @@ function initSignup() {
 
     const name = String(nameInput?.value || "").trim().toUpperCase();
     const email = normalizeEmail(emailInput?.value);
+    const region = String(regionInput?.value || "").trim();
+    const office = String(officeInput?.value || "").trim();
     const section = normalizeSection(sectionInput?.value || "");
     const password = String(passInput?.value || "");
     const confirm = String(confirmInput?.value || "");
 
-    if (!name || !email || !section || !password || !confirm) {
+    if (!name || !email || !region || !office || !section || !password || !confirm) {
       setMessage(messageEl, "Please complete all required fields.");
       return;
     }
@@ -350,6 +634,8 @@ function initSignup() {
     const user = {
       name,
       email,
+      region,
+      office,
       section,
       password,
       userId: generateUserId(),
