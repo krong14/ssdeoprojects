@@ -29,6 +29,47 @@ window.DPWH_CURRENT_USER = sessionData || null;
 window.DPWH_IS_ADMIN = isAdmin;
 window.DPWH_IS_SUPERADMIN = isSuperAdmin;
 
+function normalizeEmail(value) {
+  return String(value || "").trim().toLowerCase();
+}
+
+function getOfficeFromUsersByEmail(email) {
+  const target = normalizeEmail(email);
+  if (!target) return "";
+  try {
+    const raw = appStorage.getItem("dpwh_users");
+    const users = raw ? JSON.parse(raw) : [];
+    if (!Array.isArray(users)) return "";
+    const match = users.find(user => normalizeEmail(user?.email) === target);
+    return String(match?.office || "").trim();
+  } catch (err) {
+    return "";
+  }
+}
+
+function toSidebarOfficeLabel(office) {
+  const raw = String(office || "").trim().replace(/\s+/g, " ");
+  if (!raw) return "";
+  if (/sub-district engineering office$/i.test(raw)) {
+    return raw.replace(/sub-district engineering office$/i, "SDEO").trim();
+  }
+  if (/district engineering office$/i.test(raw)) {
+    return raw.replace(/district engineering office$/i, "DEO").trim();
+  }
+  if (/engineering office$/i.test(raw)) {
+    return raw.replace(/engineering office$/i, "EO").trim();
+  }
+  return raw;
+}
+
+const resolvedOffice = String(sessionData?.office || "").trim() || getOfficeFromUsersByEmail(sessionData?.email || "");
+const sidebarOfficeLabel = toSidebarOfficeLabel(resolvedOffice);
+if (sidebarOfficeLabel) {
+  document.querySelectorAll(".sidebar .header-text .profession").forEach(el => {
+    el.textContent = sidebarOfficeLabel;
+  });
+}
+
 document.querySelectorAll("[data-admin-only]").forEach(el => {
   el.style.display = isAdmin ? "flex" : "none";
 });
