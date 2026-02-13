@@ -8,7 +8,7 @@ const DEFAULT_MANAGED_ADMIN_EMAILS = [
   "lemuel.malinao@gmail.com",
   "alanpancitojr@gmail.com"
 ];
-const EMPLOYEE_CODE_PREFIX = "DPWH-SSDEO";
+const EMPLOYEE_CODE_PREFIX = "DPWH";
 const SECTION_CODES = Object.freeze({
   "Planning and Design Section": "PDS",
   "Construction Section": "CONS",
@@ -24,6 +24,9 @@ const SECTION_ALIASES = Object.freeze({
   "Quality Assurance Section": "Quality Assurance Section",
   "Contractor Side": "Contractor Side",
   "Administration": "Administration"
+});
+const OFFICE_CODE_OVERRIDES = Object.freeze({
+  "SAMAR 2ND DISTRICT ENGINEERING OFFICE": "SSDEO"
 });
 const DPWH_REGIONS = Object.freeze([
   "NCR",
@@ -353,6 +356,56 @@ function getSectionCode(section) {
   return SECTION_CODES[normalized] || "GEN";
 }
 
+function normalizeOfficeName(value) {
+  return String(value || "")
+    .trim()
+    .replace(/\s+/g, " ")
+    .toUpperCase();
+}
+
+function ordinalTokenToLetter(token) {
+  const normalized = String(token || "").trim().toUpperCase();
+  const map = {
+    "1ST": "F",
+    "2ND": "S",
+    "3RD": "T",
+    "4TH": "F",
+    "5TH": "F",
+    "6TH": "S",
+    "7TH": "S",
+    "8TH": "E",
+    "9TH": "N",
+    "10TH": "T"
+  };
+  return map[normalized] || "";
+}
+
+function deriveOfficeCode(office) {
+  const normalized = normalizeOfficeName(office);
+  if (!normalized) return "GEN";
+  if (OFFICE_CODE_OVERRIDES[normalized]) return OFFICE_CODE_OVERRIDES[normalized];
+
+  let base = normalized
+    .replace(/\bSUB-DISTRICT ENGINEERING OFFICE\b/g, "")
+    .replace(/\bDISTRICT ENGINEERING OFFICE\b/g, "")
+    .replace(/\bENGINEERING OFFICE\b/g, "")
+    .replace(/\bOFFICE\b/g, "")
+    .replace(/\s+/g, " ")
+    .trim();
+
+  if (!base) return "GEN";
+
+  const letters = base
+    .split(/[\s-]+/)
+    .filter(Boolean)
+    .map(part => ordinalTokenToLetter(part) || part.replace(/[^A-Z0-9]/g, "").charAt(0))
+    .filter(Boolean)
+    .join("");
+
+  if (!letters) return "GEN";
+  return `${letters}DEO`;
+}
+
 function generateUserId() {
   try {
     if (window.crypto?.randomUUID) {
@@ -366,18 +419,20 @@ function generateUserId() {
 
 function parseEmployeeCode(code) {
   const normalized = String(code || "").trim().toUpperCase();
-  const match = normalized.match(/^DPWH-SSDEO-([A-Z]+)-(\d{4})$/);
+  const match = normalized.match(/^DPWH-([A-Z0-9]+)-([A-Z]+)-(\d{4})$/);
   if (!match) return null;
   return {
-    sectionCode: match[1],
-    sequence: Number(match[2])
+    officeCode: match[1],
+    sectionCode: match[2],
+    sequence: Number(match[3])
   };
 }
 
-function buildEmployeeCode(sectionCode, sequence) {
+function buildEmployeeCode(officeCode, sectionCode, sequence) {
+  const safeOfficeCode = String(officeCode || "GEN").trim().toUpperCase();
   const safeCode = String(sectionCode || "GEN").trim().toUpperCase();
   const safeSequence = Number(sequence) || 0;
-  return `${EMPLOYEE_CODE_PREFIX}-${safeCode}-${String(safeSequence).padStart(4, "0")}`;
+  return `${EMPLOYEE_CODE_PREFIX}-${safeOfficeCode}-${safeCode}-${String(safeSequence).padStart(4, "0")}`;
 }
 
 function ensureUserIdentifiers(users) {
@@ -391,7 +446,7 @@ function ensureUserIdentifiers(users) {
     if (currentId) usedUserIds.add(currentId);
     const parsed = parseEmployeeCode(user?.employeeCode);
     if (parsed && parsed.sequence > 0) {
-      const key = parsed.sectionCode;
+      const key = `${parsed.officeCode}::${parsed.sectionCode}`;
       sectionMaxSequence[key] = Math.max(sectionMaxSequence[key] || 0, parsed.sequence);
     }
   });
@@ -400,6 +455,11 @@ function ensureUserIdentifiers(users) {
     const normalizedSection = normalizeSection(user?.section || "");
     if (normalizedSection !== user?.section) {
       user.section = normalizedSection;
+      changed = true;
+    }
+    const derivedOfficeCode = deriveOfficeCode(user?.office || "");
+    if (String(user?.officeCode || "") !== derivedOfficeCode) {
+      user.officeCode = derivedOfficeCode;
       changed = true;
     }
 
@@ -415,11 +475,12 @@ function ensureUserIdentifiers(users) {
     }
 
     const parsedCode = parseEmployeeCode(user?.employeeCode);
-    if (!parsedCode) {
-      const code = getSectionCode(user?.section || "");
-      const nextSeq = (sectionMaxSequence[code] || 0) + 1;
-      sectionMaxSequence[code] = nextSeq;
-      user.employeeCode = buildEmployeeCode(code, nextSeq);
+    if (!parsedCode || parsedCode.officeCode !== user.officeCode || parsedCode.sectionCode !== getSectionCode(user?.section || "")) {
+      const sectionCode = getSectionCode(user?.section || "");
+      const sequenceKey = `${user.officeCode}::${sectionCode}`;
+      const nextSeq = (sectionMaxSequence[sequenceKey] || 0) + 1;
+      sectionMaxSequence[sequenceKey] = nextSeq;
+      user.employeeCode = buildEmployeeCode(user.officeCode, sectionCode, nextSeq);
       changed = true;
     }
   });
@@ -517,6 +578,7 @@ function storeSession(user, remember) {
   const payload = {
     userId: user.userId || "",
     employeeCode: user.employeeCode || "",
+    officeCode: user.officeCode || deriveOfficeCode(user.office || ""),
     email: user.email,
     name: user.name,
     section: user.section,
