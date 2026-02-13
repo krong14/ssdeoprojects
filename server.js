@@ -61,6 +61,10 @@ app.use(express.static(__dirname));
 const excelFilePath = process.env.EXCEL_FILE_PATH
     ? path.resolve(process.env.EXCEL_FILE_PATH)
     : path.join(__dirname, 'projects.xlsx');
+const projectsCache = {
+    mtimeMs: 0,
+    data: null
+};
 
 const HEADERS = [
     'CONTRACT ID',
@@ -164,6 +168,29 @@ const SECTION_DOCS = {
     ]
 };
 
+function invalidateProjectsCache() {
+    projectsCache.mtimeMs = 0;
+    projectsCache.data = null;
+}
+
+function cloneProjectRows(rows) {
+    return (Array.isArray(rows) ? rows : []).map(row => ({ ...row }));
+}
+
+function readProjectsDataCached() {
+    const stat = fs.statSync(excelFilePath);
+    if (projectsCache.data && projectsCache.mtimeMs === stat.mtimeMs) {
+        return cloneProjectRows(projectsCache.data);
+    }
+
+    const workbook = XLSX.readFile(excelFilePath);
+    const worksheet = workbook.Sheets['Projects'];
+    const parsed = XLSX.utils.sheet_to_json(worksheet, { defval: '', range: 2 });
+    projectsCache.mtimeMs = stat.mtimeMs;
+    projectsCache.data = parsed;
+    return cloneProjectRows(parsed);
+}
+
 function safeKeyPart(value) {
     return encodeURIComponent(String(value || '').trim());
 }
@@ -236,7 +263,7 @@ function requireWasabi(req, res, next) {
 // ----------------------------------------------------------------------------------------------
 function normalizeEngineer(entry) {
     return {
-        name: String(entry?.name || '').trim(),
+        name: String(entry?.name || '').trim().toUpperCase(),
         role: String(entry?.role || '').trim(),
         phone: String(entry?.phone || '').trim(),
         facebook: String(entry?.facebook || '').trim(),
@@ -567,8 +594,7 @@ app.post('/api/save-project', (req, res) => {
 
         // Read existing workbook
         const workbook = XLSX.readFile(excelFilePath);
-        const worksheet = workbook.Sheets['Projects'];
-        const data = XLSX.utils.sheet_to_json(worksheet, { defval: '', range: 2 });
+        const data = readProjectsDataCached();
 
         // Add new project (will be added below the headers)
         const newRow = HEADERS.reduce((acc, header) => {
@@ -590,12 +616,12 @@ app.post('/api/save-project', (req, res) => {
         newRow['STATUS OF PROJECT'] = projectData.status || '';
         newRow['SWA (%) 1ST BILLING'] = projectData.accomplishment || '';
         newRow['INPUT 1ST BILLING'] = projectData.remarks || '';
-        newRow['PROJECT ENGINEER'] = projectData.projectEngineer;
-        newRow['MATERIALS ENGINEER'] = projectData.materialsEngineer;
-        newRow['PROJECT INSPECTOR'] = projectData.projectInspector;
-        newRow['QUALITY ASSURANCE IN-CHARGE'] = projectData.qaInCharge;
-        newRow['RESIDENT ENGINEER'] = projectData.residentEngineer;
-        newRow['CONTRACTORS MATERIALS ENGINEER'] = projectData.contractorMaterialsEngineer;
+        newRow['PROJECT ENGINEER'] = String(projectData.projectEngineer || '').trim().toUpperCase();
+        newRow['MATERIALS ENGINEER'] = String(projectData.materialsEngineer || '').trim().toUpperCase();
+        newRow['PROJECT INSPECTOR'] = String(projectData.projectInspector || '').trim().toUpperCase();
+        newRow['QUALITY ASSURANCE IN-CHARGE'] = String(projectData.qaInCharge || '').trim().toUpperCase();
+        newRow['RESIDENT ENGINEER'] = String(projectData.residentEngineer || '').trim().toUpperCase();
+        newRow['CONTRACTORS MATERIALS ENGINEER'] = String(projectData.contractorMaterialsEngineer || '').trim().toUpperCase();
 
         data.push(newRow);
 
@@ -637,6 +663,7 @@ app.post('/api/save-project', (req, res) => {
         
         workbook.Sheets['Projects'] = newWorksheet;
         XLSX.writeFile(workbook, excelFilePath);
+        invalidateProjectsCache();
 
         res.json({ success: true, message: 'Project saved successfully!' });
     } catch (error) {
@@ -655,8 +682,7 @@ app.put('/api/update-project/:contractId', (req, res) => {
 
         const projectData = req.body || {};
         const workbook = XLSX.readFile(excelFilePath);
-        const worksheet = workbook.Sheets['Projects'];
-        const data = XLSX.utils.sheet_to_json(worksheet, { defval: '', range: 2 });
+        const data = readProjectsDataCached();
 
         const index = data.findIndex(row => String(row['CONTRACT ID'] || '').trim() === contractId);
         if (index === -1) {
@@ -681,12 +707,12 @@ app.put('/api/update-project/:contractId', (req, res) => {
         updated['STATUS OF PROJECT'] = pick(projectData.status, existing['STATUS OF PROJECT']);
         updated['SWA (%) 1ST BILLING'] = pick(projectData.accomplishment, existing['SWA (%) 1ST BILLING']);
         updated['INPUT 1ST BILLING'] = pick(projectData.remarks, existing['INPUT 1ST BILLING']);
-        updated['PROJECT ENGINEER'] = pick(projectData.projectEngineer, existing['PROJECT ENGINEER']);
-        updated['MATERIALS ENGINEER'] = pick(projectData.materialsEngineer, existing['MATERIALS ENGINEER']);
-        updated['PROJECT INSPECTOR'] = pick(projectData.projectInspector, existing['PROJECT INSPECTOR']);
-        updated['QUALITY ASSURANCE IN-CHARGE'] = pick(projectData.qaInCharge, existing['QUALITY ASSURANCE IN-CHARGE']);
-        updated['RESIDENT ENGINEER'] = pick(projectData.residentEngineer, existing['RESIDENT ENGINEER']);
-        updated['CONTRACTORS MATERIALS ENGINEER'] = pick(projectData.contractorMaterialsEngineer, existing['CONTRACTORS MATERIALS ENGINEER']);
+        updated['PROJECT ENGINEER'] = String(pick(projectData.projectEngineer, existing['PROJECT ENGINEER']) || '').trim().toUpperCase();
+        updated['MATERIALS ENGINEER'] = String(pick(projectData.materialsEngineer, existing['MATERIALS ENGINEER']) || '').trim().toUpperCase();
+        updated['PROJECT INSPECTOR'] = String(pick(projectData.projectInspector, existing['PROJECT INSPECTOR']) || '').trim().toUpperCase();
+        updated['QUALITY ASSURANCE IN-CHARGE'] = String(pick(projectData.qaInCharge, existing['QUALITY ASSURANCE IN-CHARGE']) || '').trim().toUpperCase();
+        updated['RESIDENT ENGINEER'] = String(pick(projectData.residentEngineer, existing['RESIDENT ENGINEER']) || '').trim().toUpperCase();
+        updated['CONTRACTORS MATERIALS ENGINEER'] = String(pick(projectData.contractorMaterialsEngineer, existing['CONTRACTORS MATERIALS ENGINEER']) || '').trim().toUpperCase();
 
         data[index] = updated;
 
@@ -724,6 +750,7 @@ app.put('/api/update-project/:contractId', (req, res) => {
 
         workbook.Sheets['Projects'] = newWorksheet;
         XLSX.writeFile(workbook, excelFilePath);
+        invalidateProjectsCache();
         deletePowRecord(contractId);
 
         res.json({ success: true });
@@ -742,8 +769,7 @@ app.delete('/api/delete-project/:contractId', (req, res) => {
         }
 
         const workbook = XLSX.readFile(excelFilePath);
-        const worksheet = workbook.Sheets['Projects'];
-        const data = XLSX.utils.sheet_to_json(worksheet, { defval: '', range: 2 });
+        const data = readProjectsDataCached();
 
         const filtered = data.filter(row => String(row['CONTRACT ID'] || '').trim() !== contractId);
 
@@ -785,6 +811,7 @@ app.delete('/api/delete-project/:contractId', (req, res) => {
 
         workbook.Sheets['Projects'] = newWorksheet;
         XLSX.writeFile(workbook, excelFilePath);
+        invalidateProjectsCache();
 
         res.json({ success: true });
     } catch (error) {
@@ -915,9 +942,7 @@ app.delete('/api/documents', requireWasabi, async (req, res) => {
 
 app.get('/api/documents-summary', requireWasabi, async (req, res) => {
     try {
-        const workbook = XLSX.readFile(excelFilePath);
-        const worksheet = workbook.Sheets['Projects'];
-        const data = XLSX.utils.sheet_to_json(worksheet, { defval: '', range: 2 });
+        const data = readProjectsDataCached();
         const contractIds = data
             .map(row => String(row['CONTRACT ID'] || '').trim().toUpperCase())
             .filter(Boolean);
@@ -1042,9 +1067,7 @@ app.delete('/api/gallery/:contractId', requireWasabi, async (req, res) => {
 // Get all projects
 app.get('/api/get-projects', (req, res) => {
     try {
-        const workbook = XLSX.readFile(excelFilePath);
-        const worksheet = workbook.Sheets['Projects'];
-        const data = XLSX.utils.sheet_to_json(worksheet, { defval: '', range: 2 });
+        const data = readProjectsDataCached();
 
         res.json({ success: true, projects: data });
     } catch (error) {
@@ -1060,3 +1083,4 @@ app.listen(PORT, () => {
     console.log(`Server is running on http://localhost:${PORT}`);
     console.log(`Excel file location: ${excelFilePath}`);
 });
+
