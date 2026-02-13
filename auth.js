@@ -1,13 +1,30 @@
 const USERS_KEY = "dpwh_users";
 const SESSION_KEY = "dpwh_current_user";
+const ADMIN_EMAILS_KEY = "dpwh_admin_emails";
 const SUPERADMIN_EMAILS = [
   "krong0814@gmail.com"
 ];
-const ADMIN_EMAILS = [
-  ...SUPERADMIN_EMAILS,
+const DEFAULT_MANAGED_ADMIN_EMAILS = [
   "lemuel.malinao@gmail.com",
   "alanpancitojr@gmail.com"
 ];
+const EMPLOYEE_CODE_PREFIX = "DPWH-SSDEO";
+const SECTION_CODES = Object.freeze({
+  "Planning and Design Section": "PDS",
+  "Construction Section": "CONS",
+  "Quality Assurance Section": "QAS",
+  "Contractor Side": "CTR",
+  "Administration": "ADM"
+});
+const SECTION_ALIASES = Object.freeze({
+  "Planning Section": "Planning and Design Section",
+  "Planning and Design Section": "Planning and Design Section",
+  "Construction Section": "Construction Section",
+  "Quality Assurance": "Quality Assurance Section",
+  "Quality Assurance Section": "Quality Assurance Section",
+  "Contractor Side": "Contractor Side",
+  "Administration": "Administration"
+});
 
 function isSuperAdminEmail(email) {
   const normalized = normalizeEmail(email);
@@ -16,7 +33,47 @@ function isSuperAdminEmail(email) {
 
 function isAdminEmail(email) {
   const normalized = normalizeEmail(email);
-  return ADMIN_EMAILS.some(admin => normalizeEmail(admin) === normalized);
+  return getAdminEmails().some(admin => normalizeEmail(admin) === normalized);
+}
+
+function getManagedAdminEmails() {
+  const raw = appStorage.getItem(ADMIN_EMAILS_KEY);
+  if (!raw) return [...DEFAULT_MANAGED_ADMIN_EMAILS];
+  try {
+    const parsed = JSON.parse(raw);
+    if (!Array.isArray(parsed)) return [...DEFAULT_MANAGED_ADMIN_EMAILS];
+    const normalized = parsed
+      .map(normalizeEmail)
+      .filter(Boolean)
+      .filter(email => !isSuperAdminEmail(email));
+    return Array.from(new Set(normalized));
+  } catch (err) {
+    return [...DEFAULT_MANAGED_ADMIN_EMAILS];
+  }
+}
+
+function saveManagedAdminEmails(list) {
+  const normalized = Array.from(new Set(
+    (Array.isArray(list) ? list : [])
+      .map(normalizeEmail)
+      .filter(Boolean)
+      .filter(email => !isSuperAdminEmail(email))
+  ));
+  appStorage.setItem(ADMIN_EMAILS_KEY, JSON.stringify(normalized));
+}
+
+function ensureManagedAdminEmails() {
+  const raw = appStorage.getItem(ADMIN_EMAILS_KEY);
+  if (raw) return;
+  saveManagedAdminEmails(DEFAULT_MANAGED_ADMIN_EMAILS);
+}
+
+function getAdminEmails() {
+  const merged = [
+    ...SUPERADMIN_EMAILS.map(normalizeEmail),
+    ...getManagedAdminEmails().map(normalizeEmail)
+  ].filter(Boolean);
+  return Array.from(new Set(merged));
 }
 
 function loadUsers() {
@@ -32,6 +89,90 @@ function loadUsers() {
 
 function saveUsers(list) {
   appStorage.setItem(USERS_KEY, JSON.stringify(list));
+}
+
+function normalizeSection(value) {
+  const raw = String(value || "").trim();
+  return SECTION_ALIASES[raw] || raw;
+}
+
+function getSectionCode(section) {
+  const normalized = normalizeSection(section);
+  return SECTION_CODES[normalized] || "GEN";
+}
+
+function generateUserId() {
+  try {
+    if (window.crypto?.randomUUID) {
+      return `usr_${window.crypto.randomUUID()}`;
+    }
+  } catch (err) {
+    // Fallback below.
+  }
+  return `usr_${Date.now().toString(36)}${Math.random().toString(36).slice(2, 10)}`;
+}
+
+function parseEmployeeCode(code) {
+  const normalized = String(code || "").trim().toUpperCase();
+  const match = normalized.match(/^DPWH-SSDEO-([A-Z]+)-(\d{4})$/);
+  if (!match) return null;
+  return {
+    sectionCode: match[1],
+    sequence: Number(match[2])
+  };
+}
+
+function buildEmployeeCode(sectionCode, sequence) {
+  const safeCode = String(sectionCode || "GEN").trim().toUpperCase();
+  const safeSequence = Number(sequence) || 0;
+  return `${EMPLOYEE_CODE_PREFIX}-${safeCode}-${String(safeSequence).padStart(4, "0")}`;
+}
+
+function ensureUserIdentifiers(users) {
+  const list = Array.isArray(users) ? users : [];
+  let changed = false;
+  const usedUserIds = new Set();
+  const sectionMaxSequence = {};
+
+  list.forEach((user) => {
+    const currentId = String(user?.userId || "").trim();
+    if (currentId) usedUserIds.add(currentId);
+    const parsed = parseEmployeeCode(user?.employeeCode);
+    if (parsed && parsed.sequence > 0) {
+      const key = parsed.sectionCode;
+      sectionMaxSequence[key] = Math.max(sectionMaxSequence[key] || 0, parsed.sequence);
+    }
+  });
+
+  list.forEach((user) => {
+    const normalizedSection = normalizeSection(user?.section || "");
+    if (normalizedSection !== user?.section) {
+      user.section = normalizedSection;
+      changed = true;
+    }
+
+    const existingId = String(user?.userId || "").trim();
+    if (!existingId || usedUserIds.has(existingId) && list.filter(item => String(item?.userId || "").trim() === existingId).length > 1) {
+      let nextId = "";
+      do {
+        nextId = generateUserId();
+      } while (usedUserIds.has(nextId));
+      user.userId = nextId;
+      usedUserIds.add(nextId);
+      changed = true;
+    }
+
+    const parsedCode = parseEmployeeCode(user?.employeeCode);
+    if (!parsedCode) {
+      const code = getSectionCode(user?.section || "");
+      const nextSeq = (sectionMaxSequence[code] || 0) + 1;
+      sectionMaxSequence[code] = nextSeq;
+      user.employeeCode = buildEmployeeCode(code, nextSeq);
+      changed = true;
+    }
+  });
+
+  return changed;
 }
 
 function ensureSuperAdminUser() {
@@ -50,6 +191,7 @@ function ensureSuperAdminUser() {
         password: "",
         status: "approved",
         role: "superadmin",
+        userId: generateUserId(),
         createdAt: now,
         updatedAt: now
       });
@@ -72,6 +214,7 @@ function ensureSuperAdminUser() {
     }
   });
 
+  if (ensureUserIdentifiers(users)) changed = true;
   if (changed) saveUsers(users);
 }
 
@@ -96,9 +239,12 @@ function storeSession(user, remember) {
   const isSuperAdmin = isSuperAdminEmail(user.email);
   const isAdmin = isSuperAdmin || isAdminEmail(user.email);
   const payload = {
+    userId: user.userId || "",
+    employeeCode: user.employeeCode || "",
     email: user.email,
     name: user.name,
     section: user.section,
+    sectionCode: getSectionCode(user.section),
     role: isSuperAdmin ? "superadmin" : (isAdmin ? "admin" : "user"),
     isAdmin,
     isSuperAdmin,
@@ -173,9 +319,9 @@ function initSignup() {
     e.preventDefault();
     clearMessage(messageEl);
 
-    const name = String(nameInput?.value || "").trim();
+    const name = String(nameInput?.value || "").trim().toUpperCase();
     const email = normalizeEmail(emailInput?.value);
-    const section = String(sectionInput?.value || "").trim();
+    const section = normalizeSection(sectionInput?.value || "");
     const password = String(passInput?.value || "");
     const confirm = String(confirmInput?.value || "");
 
@@ -206,11 +352,14 @@ function initSignup() {
       email,
       section,
       password,
+      userId: generateUserId(),
+      employeeCode: "",
       role: isSuperAdmin ? "superadmin" : (isAdmin ? "admin" : "user"),
       status: isAdmin ? "approved" : "pending",
       createdAt: new Date().toISOString()
     };
     users.push(user);
+    ensureUserIdentifiers(users);
     saveUsers(users);
     if (isAdmin) {
       storeSession(user, true);
@@ -276,9 +425,15 @@ function initForgot() {
 }
 
 document.addEventListener("DOMContentLoaded", () => {
+  ensureManagedAdminEmails();
   ensureSuperAdminUser();
+  const users = loadUsers();
+  if (ensureUserIdentifiers(users)) saveUsers(users);
   const page = document.body.getAttribute("data-page");
   if (page === "login") initLogin();
   if (page === "signup") initSignup();
   if (page === "forgot") initForgot();
 });
+
+
+
