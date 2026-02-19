@@ -1,4 +1,4 @@
-﻿const body = document.querySelector("body")
+const body = document.querySelector("body")
 const sidebar = body.querySelector(".sidebar")
 const toggle = body.querySelector(".toggle")
 const modeSwitch = body.querySelector(".toggle-switch")
@@ -508,7 +508,6 @@ async function fetchProjectsForDashboard() {
       };
 
       if (!contractId && !description) return;
-      if (!isAdminUser && !isUserInCharge(inCharge)) return;
       validProjects.push(p);
 
       const tr = document.createElement("tr");
