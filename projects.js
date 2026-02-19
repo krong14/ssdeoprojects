@@ -1,4 +1,4 @@
-const body = document.querySelector("body")
+﻿const body = document.querySelector("body")
 const sidebar = body.querySelector(".sidebar")
 const toggle = body.querySelector(".toggle")
 const modeSwitch = body.querySelector(".toggle-switch")
@@ -240,17 +240,18 @@ function getEngineersFromStorage() {
                 return {
                     name: item?.name || "",
                     role: item?.role || "",
+                    designation: item?.designation || "",
                     phone: item?.phone || "",
                     facebook: item?.facebook || "",
                     accreditation: item?.accreditation || ""
                 };
             })
             .map(item => ({
+                ...splitDesignationAccreditation(item.designation, item.accreditation),
                 name: String(item.name || "").trim(),
                 role: normalizeEngineerRole(item.role),
                 phone: String(item.phone || "").trim(),
-                facebook: String(item.facebook || "").trim(),
-                accreditation: String(item.accreditation || "").trim()
+                facebook: String(item.facebook || "").trim()
             }))
             .filter(item => item.name);
     } catch (err) {
@@ -318,10 +319,27 @@ function normalizeNameKey(value) {
     return String(value || "").trim().toLowerCase();
 }
 
-function findEngineerByName(name, engineers) {
+function splitDesignationAccreditation(designation, accreditation) {
+    const rawDesignation = String(designation || "").trim();
+    const rawAccreditation = String(accreditation || "").trim();
+    if (rawDesignation) return { designation: rawDesignation, accreditation: rawAccreditation };
+    const looksLikeAccreditationCode = /^#?[A-Z0-9-]{4,}$/i.test(rawAccreditation);
+    return looksLikeAccreditationCode
+        ? { designation: "", accreditation: rawAccreditation }
+        : { designation: rawAccreditation, accreditation: "" };
+}
+
+function findEngineerByName(name, engineers, preferredRole = "") {
     if (!name) return null;
     const key = normalizeNameKey(name);
-    return engineers.find(engineer => normalizeNameKey(engineer.name) === key) || null;
+    const matches = engineers.filter(engineer => normalizeNameKey(engineer.name) === key);
+    if (!matches.length) return null;
+    const targetRole = normalizeNameKey(preferredRole);
+    if (targetRole) {
+        const byRole = matches.find(engineer => normalizeNameKey(engineer.role) === targetRole);
+        if (byRole) return byRole;
+    }
+    return matches[0];
 }
 
 function normalizePhoneLink(phone) {
@@ -363,7 +381,7 @@ function createContactLink({ icon, label, value, href }) {
     return el;
 }
 
-function renderEngineerDetails(containerId, engineerName, directory) {
+function renderEngineerDetails(containerId, engineerName, directory, preferredRole = "") {
     const container = document.getElementById(containerId);
     if (!container) return;
     container.innerHTML = "";
@@ -376,7 +394,7 @@ function renderEngineerDetails(containerId, engineerName, directory) {
 
     if (!displayName) return;
 
-    const engineer = findEngineerByName(displayName, directory || []);
+    const engineer = findEngineerByName(displayName, directory || [], preferredRole);
 
     const meta = document.createElement("div");
     meta.className = "engineer-meta";
@@ -396,6 +414,16 @@ function renderEngineerDetails(containerId, engineerName, directory) {
         href: normalizeFacebookLink(engineer?.facebook || "")
     }));
     meta.appendChild(links);
+
+    const designation = document.createElement("div");
+    designation.className = "engineer-accreditation";
+    const desIcon = document.createElement("i");
+    desIcon.className = "bx bx-id-card";
+    const desText = document.createElement("span");
+    desText.textContent = `Designation: ${engineer?.designation || emptyMark}`;
+    designation.appendChild(desIcon);
+    designation.appendChild(desText);
+    meta.appendChild(designation);
 
     const accreditation = document.createElement("div");
     accreditation.className = "engineer-accreditation";
@@ -493,6 +521,7 @@ const draftFieldIds = [
     "startDate",
     "expirationDate",
     "projectLocation",
+    "projectLimits",
     "projectCoordinates",
     "projectEngineer",
     "materialsEngineer",
@@ -1249,6 +1278,7 @@ function setRowDataAttributes(row, data) {
     row.dataset.expirationDate = data.expirationDate || "";
     row.dataset.revisedExpirationDates = JSON.stringify(data.revisedExpirationDates || []);
     row.dataset.location = data.location || "";
+    row.dataset.limits = data.limits || "";
     row.dataset.coordinates = data.coordinates || "";
     row.dataset.programWorks = JSON.stringify(data.programWorks || []);
     row.dataset.completionDate = data.completionDate || "";
@@ -1285,6 +1315,7 @@ function getRowDataFromRow(row) {
         expirationDate: row.dataset.expirationDate || "",
         revisedExpirationDates: row.dataset.revisedExpirationDates ? JSON.parse(row.dataset.revisedExpirationDates) : [],
         location: row.dataset.location || meta?.location || "",
+        limits: row.dataset.limits || "",
         coordinates: row.dataset.coordinates || meta?.coordinates || "",
         programWorks: (Array.isArray(parsedPow) && parsedPow.length) ? parsedPow : pow,
         completionDate: row.dataset.completionDate || "",
@@ -1339,6 +1370,7 @@ function populateFormFromRow(row) {
     setDraftFieldValue("startDate", data.startDate);
     setDraftFieldValue("expirationDate", data.expirationDate);
     setDraftFieldValue("projectLocation", data.location);
+    setDraftFieldValue("projectLimits", data.limits);
     setDraftFieldValue("projectCoordinates", data.coordinates);
     setDraftFieldValue("projectEngineer", data.projectEngineer);
     setDraftFieldValue("materialsEngineer", data.materialsEngineer);
@@ -1509,6 +1541,7 @@ saveBtn.addEventListener("click", () => {
     const startDate = document.getElementById("startDate").value;
     const expirationDate = document.getElementById("expirationDate").value;
     const location = document.getElementById("projectLocation")?.value.trim() || "";
+    const limits = document.getElementById("projectLimits")?.value.trim() || "";
     const coordinates = document.getElementById("projectCoordinates")?.value.trim() || "";
     const existingMeta = isEditing ? getProjectMeta(editingContractId || contractId) : null;
     const safeLocation = location || existingMeta?.location || editingRow?.dataset.location || "";
@@ -1556,6 +1589,7 @@ saveBtn.addEventListener("click", () => {
         startDate,
         expirationDate,
         location: safeLocation,
+        limits,
         coordinates: safeCoordinates,
         programWorks,
         completionDate,
@@ -1604,6 +1638,7 @@ saveBtn.addEventListener("click", () => {
                 startDate,
                 expirationDate,
                 location: safeLocation,
+                limits,
                 coordinates: safeCoordinates,
                 revisedExpirationDates: existingData.revisedExpirationDates || [],
                 programWorks,
@@ -1728,6 +1763,7 @@ async function fetchProjects() {
                 if (!json.success) return;
 
                 const projects = json.projects || [];
+                const fragment = document.createDocumentFragment();
                 projects.forEach(p => {
                         const contractId = p['CONTRACT ID'] || '';
                         const description = p['CONTRACT NAME/LOCATION'] || '';
@@ -1768,6 +1804,7 @@ async function fetchProjects() {
                                 startDate: p['START DATE'] || '',
                                 expirationDate: p['EXPIRATION DATE'] || '',
                                 location: p['LOCATION'] || '',
+                                limits: p['LIMITS'] || '',
                                 coordinates: '',
                                 completionDate,
                                 accomplishment,
@@ -1811,8 +1848,9 @@ async function fetchProjects() {
                             <td>${renderActionButtons(perms)}</td>
                         `;
 
-                        tableBody.appendChild(tr);
+                        fragment.appendChild(tr);
                 });
+                tableBody.appendChild(fragment);
                 updateContractsCount();
         } catch (err) {
                 console.warn('Could not load projects:', err);
@@ -2077,6 +2115,10 @@ tableBody.addEventListener("click", async (e) => {
     if (detailsLocation) {
         detailsLocation.innerText = mergedLocation || mergedCoordinates || "-";
     }
+    const detailsLimits = document.getElementById("detailsLimits");
+    if (detailsLimits) {
+        detailsLimits.innerText = currentDetailsData?.limits || row.dataset.limits || "-";
+    }
 
     const detailsCoordinates = document.getElementById("detailsCoordinates");
     if (detailsCoordinates) {
@@ -2090,12 +2132,12 @@ tableBody.addEventListener("click", async (e) => {
 
     // Fill Project In-Charge tab
     const engineerDirectory = getEngineersFromStorage();
-    renderEngineerDetails("detailsProjectEngineer", inCharge.projectEngineer, engineerDirectory);
-    renderEngineerDetails("detailsMaterialsEngineer", inCharge.materialsEngineer, engineerDirectory);
-    renderEngineerDetails("detailsProjectInspector", inCharge.projectInspector, engineerDirectory);
-    renderEngineerDetails("detailsResidentEngineer", inCharge.residentEngineer, engineerDirectory);
-    renderEngineerDetails("detailsQaInCharge", inCharge.qaInCharge, engineerDirectory);
-    renderEngineerDetails("detailsContractorMaterialsEngineer", inCharge.contractorMaterialsEngineer, engineerDirectory);
+    renderEngineerDetails("detailsProjectEngineer", inCharge.projectEngineer, engineerDirectory, "Project Engineer");
+    renderEngineerDetails("detailsMaterialsEngineer", inCharge.materialsEngineer, engineerDirectory, "Materials Engineer");
+    renderEngineerDetails("detailsProjectInspector", inCharge.projectInspector, engineerDirectory, "Project Inspector");
+    renderEngineerDetails("detailsResidentEngineer", inCharge.residentEngineer, engineerDirectory, "Resident Engineer");
+    renderEngineerDetails("detailsQaInCharge", inCharge.qaInCharge, engineerDirectory, "QA In-Charge");
+    renderEngineerDetails("detailsContractorMaterialsEngineer", inCharge.contractorMaterialsEngineer, engineerDirectory, "Contractor Materials Engineer");
 
     // Render gallery for this contract before opening modal
     try { renderGallery(title); } catch (err) { console.warn('renderGallery error', err); }
@@ -2384,7 +2426,7 @@ function buildContractInfoRows(data) {
         ["QUALITY ASSURANCE IN-CHARGE:", data.qaInCharge || ""],
         ["RESIDENT ENGINEER:", data.residentEngineer || ""],
         ["CONTRACTORS' MATERIALS ENGINEER:", data.contractorMaterialsEngineer || ""],
-        ["LIMITS:", ""],
+        ["LIMITS:", data.limits || ""],
         ["", "", "", ""],
         ["ITEM NO.", "DESCRIPTION", "QUANTITY", "UNIT"]
     ];

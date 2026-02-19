@@ -1,15 +1,14 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Admin Approval</title>
-  <link rel="stylesheet" href="admin.css">
+  <title>Documents Maker</title>
+  <link rel="stylesheet" href="documents.css">
+  <link rel="stylesheet" href="docmaker.css">
   <link rel="icon" type="image/png" href="assets/dpwh-logo.png">
   <link href="https://unpkg.com/boxicons@2.1.1/css/boxicons.min.css" rel="stylesheet">
 </head>
-
 <body>
   <nav class="sidebar close">
     <header>
@@ -17,13 +16,11 @@
         <span class="image">
           <img src="assets/dpwh-logo.png" alt="logo">
         </span>
-
         <div class="text header-text">
           <span class="name">DPWH</span>
           <span class="profession">Samar 2nd DEO </span>
         </div>
       </div>
-
       <i class='bx bx-chevron-right toggle'></i>
     </header>
 
@@ -48,7 +45,7 @@
               <span class="text nav-text">Documents</span>
             </a>
           </li>
-          <li class="nav-link">
+          <li class="nav-link active">
             <a href="docmaker.html">
               <i class='bx bx-spreadsheet icon'></i>
               <span class="text nav-text">Documents Maker</span>
@@ -66,7 +63,7 @@
               <span class="text nav-text">Engineers</span>
             </a>
           </li>
-                    <li class="nav-link">
+          <li class="nav-link">
             <a href="profile.html">
               <i class='bx bx-id-card icon'></i>
               <span class="text nav-text">Profile</span>
@@ -93,7 +90,6 @@
             <i class='bx bx-sun icon sun'></i>
           </div>
           <span class="mode-text text">Dark Mode</span>
-
           <div class="toggle-switch">
             <span class="switch"></span>
           </div>
@@ -104,64 +100,40 @@
 
   <section class="home">
     <div class="dashboard-header">
-      <h1>Access Approval</h1>
-      <p>Approve new users before they can log in.</p>
+      <h1>Documents Maker</h1>
+      <p>Quality Assurance Section document template downloads per project</p>
     </div>
 
-    <div class="admin-page">
-      <div class="admin-summary">
-        <div class="admin-card">
-          <span>Total Users</span>
-          <strong id="totalCount">0</strong>
+    <div class="docmaker-page">
+      <div class="panel docmaker-panel">
+        <div class="panel-title">
+          <i class='bx bx-upload'></i>
+          <h3>Upload QA Format Files</h3>
         </div>
-        <div class="admin-card">
-          <span>Pending</span>
-          <strong id="pendingCount">0</strong>
-        </div>
-        <div class="admin-card">
-          <span>Approved</span>
-          <strong id="approvedCount">0</strong>
-        </div>
-        <div class="admin-card">
-          <span>Blocked</span>
-          <strong id="blockedCount">0</strong>
-        </div>
+        <p class="docmaker-meta">Upload one Excel template per document type first (.xlsx / .xlsm / .xls).</p>
+        <div id="templateList" class="template-list"></div>
       </div>
 
-      <div class="admin-panel">
-        <h3>Admin Emails</h3>
-        <div class="admin-email-form">
-          <input
-            id="adminEmailInput"
-            type="email"
-            placeholder="name@email.com"
-            autocomplete="off"
-          >
-          <button type="button" class="admin-btn approve" id="addAdminEmailBtn">Add Admin</button>
+      <div class="panel docmaker-panel">
+        <div class="panel-title">
+          <i class='bx bx-download'></i>
+          <h3>Saved Projects Downloads</h3>
         </div>
-        <div class="admin-list" id="adminEmailList"></div>
-      </div>
-
-      <div class="admin-panel">
-        <h3>Pending Requests</h3>
-        <div class="admin-list" id="pendingList"></div>
-      </div>
-
-      <div class="admin-panel" style="margin-top:16px">
-        <h3>Approved Users</h3>
-        <div class="admin-list" id="approvedList"></div>
-      </div>
-
-      <div class="admin-panel" style="margin-top:16px">
-        <h3>Blocked Users</h3>
-        <div class="admin-list" id="blockedList"></div>
+        <div class="docmaker-toolbar">
+          <div class="docmaker-search">
+            <i class='bx bx-search'></i>
+            <input type="search" id="projectSearch" placeholder="Search Project ID or name">
+          </div>
+          <span class="docmaker-count" id="projectCount">0 projects</span>
+        </div>
+        <div id="projectsContainer" class="projects-list"></div>
       </div>
     </div>
   </section>
 
   <script src="online-storage.js"></script>
   <script src="auth-guard.js"></script>
-  <script src="admin.js"></script>
+  <script src="config.js"></script>
+  <script src="docmaker.js"></script>
 </body>
-
 </html>

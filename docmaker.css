@@ -1,0 +1,204 @@
+.docmaker-page {
+  display: grid;
+  gap: 16px;
+  padding: 20px 24px 28px;
+}
+
+.docmaker-panel {
+  background: var(--sidebar-color);
+  border-radius: 14px;
+  border: 1px solid var(--toggle-color);
+  padding: 16px;
+}
+
+.docmaker-meta {
+  margin: 0 0 12px;
+  color: var(--text-color);
+  opacity: 0.78;
+}
+
+.template-list {
+  display: grid;
+  gap: 10px;
+}
+
+.template-item {
+  border: 1px solid var(--toggle-color);
+  border-radius: 10px;
+  padding: 12px;
+  background: var(--body-color);
+  display: grid;
+  gap: 8px;
+}
+
+.template-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.template-title {
+  color: var(--text-color);
+  font-weight: 600;
+}
+
+.template-status {
+  color: var(--text-color);
+  font-size: 12px;
+  opacity: 0.8;
+}
+
+.template-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.template-upload {
+  border: 1px dashed var(--toggle-color);
+  color: var(--text-color);
+  border-radius: 8px;
+  padding: 6px 10px;
+  cursor: pointer;
+}
+
+.template-clear {
+  border: 1px solid #e35d6a;
+  color: #e35d6a;
+  background: transparent;
+  border-radius: 8px;
+  padding: 6px 10px;
+  cursor: pointer;
+}
+
+.template-upload input {
+  display: none;
+}
+
+.docmaker-toolbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  margin: 8px 0 12px;
+  flex-wrap: wrap;
+}
+
+.docmaker-search {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  border: 1px solid var(--toggle-color);
+  border-radius: 8px;
+  padding: 8px 10px;
+  min-width: 280px;
+  background: var(--body-color);
+}
+
+.docmaker-search i {
+  color: var(--text-color);
+  opacity: 0.8;
+}
+
+.docmaker-search input {
+  background: transparent;
+  border: 0;
+  outline: 0;
+  color: var(--text-color);
+  width: 100%;
+}
+
+.docmaker-count {
+  color: var(--text-color);
+  opacity: 0.8;
+}
+
+.projects-list {
+  display: grid;
+  gap: 12px;
+}
+
+.project-card {
+  border: 1px solid var(--toggle-color);
+  border-radius: 10px;
+  background: var(--body-color);
+  padding: 12px;
+}
+
+.project-title {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 10px;
+}
+
+.project-id {
+  font-weight: 700;
+  color: var(--text-color);
+}
+
+.project-name {
+  color: var(--text-color);
+  opacity: 0.85;
+}
+
+.doc-grid {
+  display: grid;
+  gap: 8px;
+}
+
+.doc-row {
+  border: 1px solid var(--toggle-color);
+  border-radius: 8px;
+  padding: 8px 10px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+}
+
+.doc-name {
+  color: var(--text-color);
+  font-size: 13px;
+}
+
+.doc-download {
+  border: 1px solid #2c7be5;
+  color: #2c7be5;
+  background: transparent;
+  border-radius: 8px;
+  padding: 6px 10px;
+  cursor: pointer;
+  font-size: 12px;
+}
+
+.doc-download:disabled {
+  cursor: not-allowed;
+  opacity: 0.45;
+}
+
+.empty-state {
+  color: var(--text-color);
+  opacity: 0.8;
+  padding: 14px;
+  border: 1px dashed var(--toggle-color);
+  border-radius: 10px;
+}
+
+@media (max-width: 720px) {
+  .docmaker-page {
+    padding: 12px;
+  }
+
+  .docmaker-panel {
+    padding: 12px;
+  }
+
+  .docmaker-search {
+    min-width: 0;
+    width: 100%;
+  }
+}

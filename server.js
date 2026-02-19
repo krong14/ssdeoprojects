@@ -1,4 +1,4 @@
-const express = require('express');
+﻿const express = require('express');
 const cors = require('cors');
 const path = require('path');
 const fs = require('fs');
@@ -70,6 +70,7 @@ const HEADERS = [
     'CONTRACT ID',
     'CONTRACT NAME/LOCATION',
     'LOCATION',
+    'LIMITS',
     'TYPE OF PROJECT',
     'APPROPRIATION',
     'APPROVED BUDGET COST (ABC)',
@@ -203,6 +204,166 @@ function decodeKeyPart(value) {
     }
 }
 
+function parseDateInput(value) {
+    if (!value && value !== 0) return null;
+    if (value instanceof Date) {
+        return Number.isNaN(value.getTime()) ? null : value;
+    }
+    if (typeof value === 'number') {
+        const parsed = XLSX.SSF.parse_date_code(value);
+        if (!parsed) return null;
+        return new Date(parsed.y, parsed.m - 1, parsed.d);
+    }
+
+    const raw = String(value || '').trim();
+    if (!raw) return null;
+    if (/^\d{4}-\d{2}-\d{2}$/.test(raw)) {
+        const parsed = new Date(`${raw}T00:00:00`);
+        return Number.isNaN(parsed.getTime()) ? null : parsed;
+    }
+    if (/^\d{2}\/\d{2}\/\d{4}$/.test(raw)) {
+        const [mm, dd, yyyy] = raw.split('/').map(Number);
+        const parsed = new Date(yyyy, mm - 1, dd);
+        return Number.isNaN(parsed.getTime()) ? null : parsed;
+    }
+    const parsed = new Date(raw);
+    return Number.isNaN(parsed.getTime()) ? null : parsed;
+}
+
+function formatLongDate(value) {
+    const date = parseDateInput(value);
+    if (!date) return '';
+    const monthNames = [
+        'January', 'February', 'March', 'April', 'May', 'June',
+        'July', 'August', 'September', 'October', 'November', 'December'
+    ];
+    return `${monthNames[date.getMonth()]} ${String(date.getDate()).padStart(2, '0')}, ${date.getFullYear()}`;
+}
+
+function parseMoney(value) {
+    if (value === undefined || value === null) return NaN;
+    const cleaned = String(value).replace(/[^0-9.-]/g, '');
+    const num = Number(cleaned);
+    return Number.isNaN(num) ? NaN : num;
+}
+
+function formatPeso(value) {
+    const num = parseMoney(value);
+    if (Number.isNaN(num)) return '';
+    return `₱${num.toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+}
+
+function getProjectByContractId(contractId) {
+    const key = normalizeContractId(contractId);
+    if (!key) return null;
+    const rows = readProjectsDataCached();
+    return rows.find(row => normalizeContractId(row['CONTRACT ID']) === key) || null;
+}
+
+function splitTextByMaxChars(text, maxChars = 52) {
+    const cleaned = String(text || '').trim().replace(/\s+/g, ' ');
+    if (!cleaned) return [''];
+    const words = cleaned.split(' ');
+    const lines = [];
+    let current = '';
+
+    words.forEach(word => {
+        if (!word) return;
+        if (!current) {
+            if (word.length <= maxChars) {
+                current = word;
+            } else {
+                for (let i = 0; i < word.length; i += maxChars) {
+                    lines.push(word.slice(i, i + maxChars));
+                }
+                current = '';
+            }
+            return;
+        }
+        const candidate = `${current} ${word}`;
+        if (candidate.length <= maxChars) {
+            current = candidate;
+        } else {
+            lines.push(current);
+            if (word.length <= maxChars) {
+                current = word;
+            } else {
+                for (let i = 0; i < word.length; i += maxChars) {
+                    lines.push(word.slice(i, i + maxChars));
+                }
+                current = '';
+            }
+        }
+    });
+    if (current) lines.push(current);
+    return lines.length ? lines : [''];
+}
+
+function insertRows(sheet, startRowOneBased, count) {
+    if (!sheet || count <= 0) return;
+    const startRow = Math.max(1, Number(startRowOneBased || 1)) - 1;
+    const range = XLSX.utils.decode_range(sheet['!ref'] || 'A1:A1');
+
+    for (let r = range.e.r; r >= startRow; r -= 1) {
+        for (let c = range.s.c; c <= range.e.c; c += 1) {
+            const fromRef = XLSX.utils.encode_cell({ r, c });
+            const toRef = XLSX.utils.encode_cell({ r: r + count, c });
+            if (sheet[fromRef] !== undefined) {
+                sheet[toRef] = sheet[fromRef];
+                delete sheet[fromRef];
+            } else if (sheet[toRef] !== undefined) {
+                delete sheet[toRef];
+            }
+        }
+    }
+
+    range.e.r += count;
+    sheet['!ref'] = XLSX.utils.encode_range(range);
+
+    if (Array.isArray(sheet['!merges'])) {
+        sheet['!merges'] = sheet['!merges'].map(merge => {
+            const next = {
+                s: { r: merge.s.r, c: merge.s.c },
+                e: { r: merge.e.r, c: merge.e.c }
+            };
+            if (next.s.r >= startRow) {
+                next.s.r += count;
+                next.e.r += count;
+            } else if (next.e.r >= startRow) {
+                next.e.r += count;
+            }
+            return next;
+        });
+    }
+
+    if (Array.isArray(sheet['!rows'])) {
+        const rows = sheet['!rows'];
+        const template = rows[startRow - 1] ? { ...rows[startRow - 1] } : undefined;
+        for (let i = 0; i < count; i += 1) {
+            rows.splice(startRow, 0, template ? { ...template } : {});
+        }
+    }
+}
+
+function ensureMerge(sheet, startRef, endRef) {
+    if (!sheet['!merges']) sheet['!merges'] = [];
+    const start = XLSX.utils.decode_cell(startRef);
+    const end = XLSX.utils.decode_cell(endRef);
+    const exists = sheet['!merges'].some(merge =>
+        merge.s.r === start.r && merge.s.c === start.c && merge.e.r === end.r && merge.e.c === end.c
+    );
+    if (!exists) {
+        sheet['!merges'].push({ s: start, e: end });
+    }
+}
+
+function setSheetString(sheet, ref, value) {
+    const cell = sheet[ref] || {};
+    cell.t = 's';
+    cell.v = String(value || '');
+    sheet[ref] = cell;
+}
+
 function sanitizeFilename(name) {
     return String(name || 'file')
         .replace(/[^a-zA-Z0-9._-]/g, '_')
@@ -265,6 +426,7 @@ function normalizeEngineer(entry) {
     return {
         name: String(entry?.name || '').trim().toUpperCase(),
         role: String(entry?.role || '').trim(),
+        designation: String(entry?.designation || '').trim(),
         phone: String(entry?.phone || '').trim(),
         facebook: String(entry?.facebook || '').trim(),
         accreditation: String(entry?.accreditation || '').trim()
@@ -609,6 +771,7 @@ app.post('/api/save-project', (req, res) => {
         newRow['APPROVED BUDGET COST (ABC)'] = projectData.approvedBudgetCost || '';
         newRow['CONTRACT AMOUNT'] = projectData.contractCost;
         newRow['LOCATION'] = projectData.location || '';
+        newRow['LIMITS'] = projectData.limits || '';
         newRow['CONTRACTOR'] = projectData.contractor;
         newRow['START DATE'] = projectData.startDate;
         newRow['EXPIRATION DATE'] = projectData.expirationDate;
@@ -700,6 +863,7 @@ app.put('/api/update-project/:contractId', (req, res) => {
         updated['APPROVED BUDGET COST (ABC)'] = pick(projectData.approvedBudgetCost, existing['APPROVED BUDGET COST (ABC)']);
         updated['CONTRACT AMOUNT'] = pick(projectData.contractCost, existing['CONTRACT AMOUNT']);
         updated['LOCATION'] = pick(projectData.location, existing['LOCATION']);
+        updated['LIMITS'] = pick(projectData.limits, existing['LIMITS']);
         updated['CONTRACTOR'] = pick(projectData.contractor, existing['CONTRACTOR']);
         updated['START DATE'] = pick(projectData.startDate, existing['START DATE']);
         updated['EXPIRATION DATE'] = pick(projectData.expirationDate, existing['EXPIRATION DATE']);
@@ -1073,6 +1237,93 @@ app.get('/api/get-projects', (req, res) => {
     } catch (error) {
         console.error('Error reading projects:', error);
         res.status(500).json({ success: false, error: error.message });
+    }
+});
+
+app.get('/api/docmaker/qcp/:contractId', (req, res) => {
+    try {
+        const contractId = String(req.params.contractId || '').trim();
+        if (!contractId) {
+            return res.status(400).json({ success: false, error: 'Missing contractId.' });
+        }
+
+        const templatePath = path.join(__dirname, 'docsmaker', 'QCP.xlsx');
+        if (!fs.existsSync(templatePath)) {
+            return res.status(404).json({ success: false, error: 'QCP template file not found in docsmaker/QCP.xlsx.' });
+        }
+
+        const project = getProjectByContractId(contractId);
+        if (!project) {
+            return res.status(404).json({ success: false, error: 'Project not found.' });
+        }
+
+        const workbook = XLSX.readFile(templatePath, { cellStyles: true });
+        const firstSheetName = workbook.SheetNames[0];
+        const sheet = workbook.Sheets[firstSheetName];
+        if (!sheet) {
+            return res.status(500).json({ success: false, error: 'QCP worksheet is missing.' });
+        }
+
+        const projectNameLines = splitTextByMaxChars(project['CONTRACT NAME/LOCATION'], 52);
+        const extraRows = Math.max(0, projectNameLines.length - 2);
+        if (extraRows > 0) {
+            insertRows(sheet, 9, extraRows);
+        }
+
+        const rowStartForName = 7;
+        const nameRowSpan = Math.max(2, projectNameLines.length);
+        for (let i = 0; i < nameRowSpan; i += 1) {
+            const row = rowStartForName + i;
+            ensureMerge(sheet, `D${row}`, `J${row}`);
+            setSheetString(sheet, `D${row}`, '');
+        }
+        projectNameLines.forEach((line, idx) => {
+            const row = rowStartForName + idx;
+            ensureMerge(sheet, `D${row}`, `J${row}`);
+            setSheetString(sheet, `D${row}`, line);
+        });
+
+        const baseRow = 9 + extraRows;
+        const startDate = parseDateInput(project['START DATE']);
+        const startYear = startDate ? startDate.getFullYear() : '';
+
+        let releaseDate = null;
+        if (startDate) {
+            releaseDate = new Date(startDate);
+            releaseDate.setDate(releaseDate.getDate() + 2);
+            const day = releaseDate.getDay();
+            if (day === 6) releaseDate.setDate(releaseDate.getDate() + 2);
+            if (day === 0) releaseDate.setDate(releaseDate.getDate() + 1);
+        }
+
+        const appropriation = formatPeso(project['APPROPRIATION']);
+        const contractCost = formatPeso(project['CONTRACT AMOUNT']);
+        const combinedCost = [appropriation, contractCost].filter(Boolean).join('/');
+
+        ensureMerge(sheet, 'D6', 'J6');
+        ensureMerge(sheet, `B${baseRow}`, `F${baseRow}`);
+        ensureMerge(sheet, `H${baseRow}`, `J${baseRow}`);
+        ensureMerge(sheet, `E${baseRow + 1}`, `F${baseRow + 1}`);
+        ensureMerge(sheet, `H${baseRow + 1}`, `J${baseRow + 1}`);
+        ensureMerge(sheet, `H${baseRow + 2}`, `J${baseRow + 2}`);
+
+        setSheetString(sheet, 'D6', project['CONTRACT ID'] || contractId);
+        setSheetString(sheet, `B${baseRow}`, project['LIMITS'] || '');
+        setSheetString(sheet, `H${baseRow}`, project['LOCATION'] || '');
+        setSheetString(sheet, `E${baseRow + 1}`, combinedCost);
+        setSheetString(sheet, `H${baseRow + 1}`, startYear ? `GAA FY ${startYear}` : 'GAA FY');
+        setSheetString(sheet, `H${baseRow + 2}`, formatLongDate(releaseDate));
+
+        const outBuffer = XLSX.write(workbook, { type: 'buffer', bookType: 'xlsx' });
+        const safeId = sanitizeFilename(contractId || 'PROJECT');
+        const filename = `${safeId} - QCP.xlsx`;
+
+        res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+        res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+        res.send(outBuffer);
+    } catch (error) {
+        console.error('QCP generation failed:', error);
+        res.status(500).json({ success: false, error: error.message || 'Failed to generate QCP.' });
     }
 });
 

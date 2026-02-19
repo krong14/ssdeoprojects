@@ -1,4 +1,4 @@
-const body = document.querySelector("body");
+﻿const body = document.querySelector("body");
 const sidebar = body.querySelector(".sidebar");
 const toggle = body.querySelector(".toggle");
 const modeSwitch = body.querySelector(".toggle-switch");
@@ -90,6 +90,7 @@ const nameInput = document.getElementById("engineerName");
 const roleInput = document.getElementById("engineerRole");
 const phoneInput = document.getElementById("engineerPhone");
 const facebookInput = document.getElementById("engineerFacebook");
+const designationInput = document.getElementById("engineerDesignation");
 const accreditationInput = document.getElementById("engineerAccreditation");
 const addBtn = document.getElementById("addEngineerBtn");
 const listEl = document.getElementById("engineerList");
@@ -115,6 +116,16 @@ function normalizeRole(role) {
   return value;
 }
 
+function splitDesignationAccreditation(designation, accreditation) {
+  const rawDesignation = String(designation || "").trim();
+  const rawAccreditation = String(accreditation || "").trim();
+  if (rawDesignation) return { designation: rawDesignation, accreditation: rawAccreditation };
+  const looksLikeAccreditationCode = /^#?[A-Z0-9-]{4,}$/i.test(rawAccreditation);
+  return looksLikeAccreditationCode
+    ? { designation: "", accreditation: rawAccreditation }
+    : { designation: rawAccreditation, accreditation: "" };
+}
+
 function loadEngineers() {
   const raw = appStorage.getItem(engineersStorageKey);
   if (!raw) return [];
@@ -127,17 +138,18 @@ function loadEngineers() {
         return {
           name: item?.name || "",
           role: item?.role || "",
+          designation: item?.designation || "",
           phone: item?.phone || "",
           facebook: item?.facebook || "",
           accreditation: item?.accreditation || ""
         };
       })
       .map(item => ({
+        ...splitDesignationAccreditation(item.designation, item.accreditation),
         name: normalizeName(item.name),
         role: normalizeRole(item.role),
         phone: String(item.phone || "").trim(),
         facebook: String(item.facebook || "").trim(),
-        accreditation: String(item.accreditation || "").trim()
       }))
       .filter(item => normalizeName(item.name));
   } catch (err) {
@@ -254,6 +266,7 @@ function renderEngineers() {
   const normalized = engineers.map(item => ({
     name: item.name,
     role: normalizeRole(item.role) || "",
+    designation: item.designation || "",
     phone: item.phone || "",
     facebook: item.facebook || "",
     accreditation: item.accreditation || ""
@@ -320,16 +333,38 @@ function renderEngineers() {
 
         const accreditation = document.createElement("div");
         accreditation.className = "engineer-accreditation";
+
+        const designationLabel = document.createElement("span");
+        designationLabel.textContent = engineer.designation
+          ? `Designation: ${engineer.designation}`
+          : "Designation: Not set";
+        accreditation.appendChild(designationLabel);
+
         const accLabel = document.createElement("span");
         accLabel.textContent = engineer.accreditation
           ? `Accreditation: ${engineer.accreditation}`
           : "Accreditation: Not set";
         accreditation.appendChild(accLabel);
+
+        if (!engineer.designation) {
+          const designationAdd = document.createElement("button");
+          designationAdd.type = "button";
+          designationAdd.className = "inline-add";
+          designationAdd.textContent = "Add Designation";
+          designationAdd.addEventListener("click", async () => {
+            const value = prompt("Enter designation:");
+            if (!value) return;
+            await upsertEngineerApi({ ...engineer, designation: String(value).trim() });
+            renderEngineers();
+          });
+          accreditation.appendChild(designationAdd);
+        }
+
         if (!engineer.accreditation) {
           const accAdd = document.createElement("button");
           accAdd.type = "button";
           accAdd.className = "inline-add";
-          accAdd.textContent = "Add";
+          accAdd.textContent = "Add Accreditation";
           accAdd.addEventListener("click", async () => {
             const value = prompt("Enter accreditation number:");
             if (!value) return;
@@ -489,9 +524,10 @@ async function addEngineer() {
   }
   const phone = String(phoneInput?.value || "").trim();
   const facebook = String(facebookInput?.value || "").trim();
+  const designation = String(designationInput?.value || "").trim();
   const accreditation = String(accreditationInput?.value || "").trim();
   if (engineersApiEndpoint) {
-    await upsertEngineerApi({ name, role, phone, facebook, accreditation });
+    await upsertEngineerApi({ name, role, designation, phone, facebook, accreditation });
   } else {
     const list = loadEngineers();
     const existingIndex = list.findIndex(item =>
@@ -501,9 +537,10 @@ async function addEngineer() {
     if (existingIndex >= 0) {
       if (phone) list[existingIndex].phone = phone;
       if (facebook) list[existingIndex].facebook = facebook;
+      if (designation) list[existingIndex].designation = designation;
       if (accreditation) list[existingIndex].accreditation = accreditation;
     } else {
-      list.push({ name, role, phone, facebook, accreditation });
+      list.push({ name, role, designation, phone, facebook, accreditation });
     }
     saveEngineers(list);
   }
@@ -512,6 +549,7 @@ async function addEngineer() {
   if (roleInput) roleInput.value = "";
   if (phoneInput) phoneInput.value = "";
   if (facebookInput) facebookInput.value = "";
+  if (designationInput) designationInput.value = "";
   if (accreditationInput) accreditationInput.value = "";
   renderEngineers();
 }
