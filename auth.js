@@ -8,6 +8,11 @@ const DEFAULT_MANAGED_ADMIN_EMAILS = [
   "lemuel.malinao@gmail.com",
   "alanpancitojr@gmail.com"
 ];
+const PREAPPROVED_USER_EMAILS = [
+  "vincecajefe@gmail.com",
+  "kindredortillo25@gmail.com",
+  "castillovjane@gmail.com"
+];
 const EMPLOYEE_CODE_PREFIX = "DPWH";
 const SECTION_CODES = Object.freeze({
   "Planning and Design Section": "PDS",
@@ -533,6 +538,51 @@ function ensureSuperAdminUser() {
   if (changed) saveUsers(users);
 }
 
+function ensurePreApprovedUsers() {
+  const users = loadUsers();
+  const now = new Date().toISOString();
+  let changed = false;
+
+  PREAPPROVED_USER_EMAILS.forEach((emailValue) => {
+    const email = normalizeEmail(emailValue);
+    if (!email || isAdminEmail(email)) return;
+    const idx = users.findIndex(u => normalizeEmail(u?.email) === email);
+    if (idx === -1) {
+      users.push({
+        name: "",
+        email,
+        region: "",
+        office: "",
+        section: "",
+        password: "",
+        role: "user",
+        status: "approved",
+        preApproved: true,
+        userId: generateUserId(),
+        createdAt: now,
+        updatedAt: now
+      });
+      changed = true;
+      return;
+    }
+
+    const existing = users[idx] || {};
+    const next = {
+      ...existing,
+      email,
+      role: "user",
+      status: "approved",
+      preApproved: true,
+      updatedAt: now
+    };
+    users[idx] = next;
+    changed = true;
+  });
+
+  if (ensureUserIdentifiers(users)) changed = true;
+  if (changed) saveUsers(users);
+}
+
 function setMessage(el, msg, type = "error") {
   if (!el) return;
   el.textContent = msg;
@@ -801,6 +851,7 @@ function initForgot() {
 document.addEventListener("DOMContentLoaded", () => {
   ensureManagedAdminEmails();
   ensureSuperAdminUser();
+  ensurePreApprovedUsers();
   const users = loadUsers();
   if (ensureUserIdentifiers(users)) saveUsers(users);
   const page = document.body.getAttribute("data-page");
