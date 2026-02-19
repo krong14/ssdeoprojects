@@ -7,6 +7,11 @@ const DEFAULT_MANAGED_ADMIN_EMAILS = [
   "lemuel.malinao@gmail.com",
   "alanpancitojr@gmail.com"
 ];
+const PREAPPROVED_USER_EMAILS = [
+  "vincecajefe@gmail.com",
+  "kindredortillo25@gmail.com",
+  "castillovjane@gmail.com"
+];
 
 const body = document.querySelector("body");
 const sidebar = body?.querySelector(".sidebar");
@@ -133,6 +138,49 @@ function loadUsers() {
 
 function saveUsers(list) {
   appStorage.setItem(USERS_KEY, JSON.stringify(list));
+}
+
+function ensurePreApprovedUsers() {
+  const users = loadUsers();
+  const now = new Date().toISOString();
+  let changed = false;
+
+  PREAPPROVED_USER_EMAILS.forEach((emailValue) => {
+    const email = normalizeEmail(emailValue);
+    if (!email || isAdminEmail(email)) return;
+    const idx = users.findIndex(u => normalizeEmail(u?.email) === email);
+    if (idx === -1) {
+      users.push({
+        name: "",
+        email,
+        region: "",
+        office: "",
+        section: "",
+        password: "",
+        role: "user",
+        status: "approved",
+        preApproved: true,
+        createdAt: now,
+        updatedAt: now
+      });
+      changed = true;
+      return;
+    }
+
+    const existing = users[idx] || {};
+    const next = {
+      ...existing,
+      email,
+      role: "user",
+      status: "approved",
+      preApproved: true,
+      updatedAt: now
+    };
+    users[idx] = next;
+    changed = true;
+  });
+
+  if (changed) saveUsers(users);
 }
 
 function syncUserRoleByEmail(email, makeAdmin) {
@@ -439,6 +487,7 @@ function addApprovedEmail() {
 
 document.addEventListener("DOMContentLoaded", () => {
   ensureManagedAdminEmails();
+  ensurePreApprovedUsers();
   renderAdminEmails();
   renderUsers();
   addAdminEmailBtn?.addEventListener("click", addAdminEmail);
