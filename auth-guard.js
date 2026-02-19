@@ -71,20 +71,12 @@ if (sidebarOfficeLabel) {
 }
 
 document.querySelectorAll("[data-admin-only]").forEach(el => {
-  el.style.display = isAdmin ? "flex" : "none";
+  el.style.display = "flex";
 });
 
 document.querySelectorAll("[data-superadmin-only]").forEach(el => {
-  el.style.display = isSuperAdmin ? "flex" : "none";
+  el.style.display = "flex";
 });
-
-if (window.location.pathname.endsWith("admin.html") && !isAdmin) {
-  window.location.href = "dashboard.html";
-}
-
-if (window.location.pathname.endsWith("docmaker.html") && !isSuperAdmin) {
-  window.location.href = "dashboard.html";
-}
 
 document.addEventListener("click", (e) => {
   const logoutLink = e.target.closest("[data-logout]");
