@@ -1431,7 +1431,7 @@ function openDetailsModal(row) {
 
   const statusEl = document.getElementById("detailsStatus");
   if (statusEl) {
-    statusEl.innerText = status || "â€”";
+    statusEl.innerText = status || "-";
     statusEl.classList.remove("success", "warning", "danger");
     statusEl.classList.add(statusToTag(status));
   }

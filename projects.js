@@ -2089,7 +2089,7 @@ tableBody.addEventListener("click", async (e) => {
     const latestRevisedExpiration = revisedDates.length ? revisedDates[revisedDates.length - 1] : "";
     if (revisedExpirationBlock) revisedExpirationBlock.classList.toggle("hidden", !latestRevisedExpiration);
     if (detailsRevisedExpiration) detailsRevisedExpiration.innerText = latestRevisedExpiration ? formatDateLong(latestRevisedExpiration) : "-";
-    document.getElementById("detailsStatus").innerText = status || "â€”";
+    document.getElementById("detailsStatus").innerText = status || "-";
     const startDate = row.dataset.startDate || "-";
     const expirationDate = row.dataset.expirationDate || "-";
     document.getElementById("detailsStart").innerText = formatDateLong(startDate);
