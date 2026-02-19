@@ -690,8 +690,16 @@ function initSignup() {
     }
 
     const users = loadUsers();
-    const exists = users.some(u => normalizeEmail(u.email) === email);
-    if (exists) {
+    const existingIndex = users.findIndex(u => normalizeEmail(u?.email) === email);
+    const existingUser = existingIndex >= 0 ? (users[existingIndex] || {}) : null;
+    const isPreApprovedRecord = Boolean(
+      existingUser
+      && existingUser.preApproved
+      && String(existingUser.role || "user").toLowerCase() === "user"
+      && String(existingUser.status || "approved").toLowerCase() === "approved"
+      && !String(existingUser.password || "").trim()
+    );
+    if (existingUser && !isPreApprovedRecord) {
       setMessage(messageEl, "An account with this email already exists.");
       return;
     }
@@ -705,13 +713,19 @@ function initSignup() {
       office,
       section,
       password,
-      userId: generateUserId(),
-      employeeCode: "",
+      userId: existingUser?.userId || generateUserId(),
+      employeeCode: existingUser?.employeeCode || "",
       role: isSuperAdmin ? "superadmin" : (isAdmin ? "admin" : "user"),
       status: isAdmin ? "approved" : "pending",
-      createdAt: new Date().toISOString()
+      preApproved: false,
+      createdAt: existingUser?.createdAt || new Date().toISOString(),
+      updatedAt: new Date().toISOString()
     };
-    users.push(user);
+    if (existingIndex >= 0 && isPreApprovedRecord) {
+      users[existingIndex] = { ...existingUser, ...user };
+    } else {
+      users.push(user);
+    }
     ensureUserIdentifiers(users);
     saveUsers(users);
     if (isAdmin) {
