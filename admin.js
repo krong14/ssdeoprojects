@@ -27,6 +27,8 @@ const totalCount = document.getElementById("totalCount");
 const adminEmailInput = document.getElementById("adminEmailInput");
 const addAdminEmailBtn = document.getElementById("addAdminEmailBtn");
 const adminEmailList = document.getElementById("adminEmailList");
+const approvedEmailInput = document.getElementById("approvedEmailInput");
+const addApprovedEmailBtn = document.getElementById("addApprovedEmailBtn");
 
 const applySidebarState = () => {
   if (!sidebar) return;
@@ -386,15 +388,71 @@ function addAdminEmail() {
   renderUsers();
 }
 
+function addApprovedEmail() {
+  const email = normalizeEmail(approvedEmailInput?.value);
+  if (!email) {
+    alert("Please enter an email.");
+    return;
+  }
+  if (!isValidEmail(email)) {
+    alert("Please enter a valid email.");
+    return;
+  }
+  if (isAdminEmail(email)) {
+    alert("This email is an admin/superadmin email.");
+    return;
+  }
+
+  const users = loadUsers();
+  const idx = users.findIndex(u => normalizeEmail(u?.email) === email);
+  if (idx >= 0) {
+    const user = users[idx] || {};
+    users[idx] = {
+      ...user,
+      email,
+      role: "user",
+      status: "approved",
+      preApproved: true,
+      updatedAt: new Date().toISOString()
+    };
+  } else {
+    const now = new Date().toISOString();
+    users.push({
+      name: "",
+      email,
+      region: "",
+      office: "",
+      section: "",
+      password: "",
+      role: "user",
+      status: "approved",
+      preApproved: true,
+      createdAt: now,
+      updatedAt: now
+    });
+  }
+
+  saveUsers(users);
+  if (approvedEmailInput) approvedEmailInput.value = "";
+  renderUsers();
+}
+
 document.addEventListener("DOMContentLoaded", () => {
   ensureManagedAdminEmails();
   renderAdminEmails();
   renderUsers();
   addAdminEmailBtn?.addEventListener("click", addAdminEmail);
+  addApprovedEmailBtn?.addEventListener("click", addApprovedEmail);
   adminEmailInput?.addEventListener("keydown", (event) => {
     if (event.key === "Enter") {
       event.preventDefault();
       addAdminEmail();
+    }
+  });
+  approvedEmailInput?.addEventListener("keydown", (event) => {
+    if (event.key === "Enter") {
+      event.preventDefault();
+      addApprovedEmail();
     }
   });
 });
