@@ -706,6 +706,7 @@ function initSignup() {
 
     const isSuperAdmin = isSuperAdminEmail(email);
     const isAdmin = isSuperAdmin || isAdminEmail(email);
+    const finalStatus = (isPreApprovedRecord || isAdmin) ? "approved" : "pending";
     const user = {
       name,
       email,
@@ -716,7 +717,7 @@ function initSignup() {
       userId: existingUser?.userId || generateUserId(),
       employeeCode: existingUser?.employeeCode || "",
       role: isSuperAdmin ? "superadmin" : (isAdmin ? "admin" : "user"),
-      status: isAdmin ? "approved" : "pending",
+      status: finalStatus,
       preApproved: false,
       createdAt: existingUser?.createdAt || new Date().toISOString(),
       updatedAt: new Date().toISOString()
@@ -740,7 +741,13 @@ function initSignup() {
       }, 800);
       return;
     }
-    setMessage(messageEl, "Account created. Awaiting admin approval.", "success");
+    setMessage(
+      messageEl,
+      isPreApprovedRecord
+        ? "Account setup complete. You can now log in."
+        : "Account created. Awaiting admin approval.",
+      "success"
+    );
     setTimeout(() => {
       window.location.href = "index.html";
     }, 900);
