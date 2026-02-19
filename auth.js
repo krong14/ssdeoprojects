@@ -338,7 +338,16 @@ function getAdminEmails() {
 
 function loadUsers() {
   const raw = appStorage.getItem(USERS_KEY);
-  if (!raw) return [];
+  if (!raw) {
+    try {
+      const localRaw = window.localStorage?.getItem(USERS_KEY);
+      if (!localRaw) return [];
+      const parsedLocal = JSON.parse(localRaw);
+      return Array.isArray(parsedLocal) ? parsedLocal : [];
+    } catch (err) {
+      return [];
+    }
+  }
   try {
     const parsed = JSON.parse(raw);
     return Array.isArray(parsed) ? parsed : [];
@@ -349,6 +358,11 @@ function loadUsers() {
 
 function saveUsers(list) {
   appStorage.setItem(USERS_KEY, JSON.stringify(list));
+  try {
+    window.localStorage?.setItem(USERS_KEY, JSON.stringify(list));
+  } catch (err) {
+    // Ignore local storage write errors.
+  }
 }
 
 function normalizeSection(value) {
