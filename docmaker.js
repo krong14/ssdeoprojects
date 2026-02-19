@@ -10,6 +10,15 @@ const projectSearchInput = document.getElementById("projectSearch");
 const projectCountEl = document.getElementById("projectCount");
 const templateListEl = document.getElementById("templateList");
 const projectsContainerEl = document.getElementById("projectsContainer");
+const isSuperAdminUser = Boolean(
+  window.DPWH_IS_SUPERADMIN
+  || window.DPWH_CURRENT_USER?.isSuperAdmin
+  || window.DPWH_CURRENT_USER?.role === "superadmin"
+);
+
+if (!isSuperAdminUser) {
+  window.location.href = "dashboard.html";
+}
 
 const qaTemplateDefs = [
   { id: "qcp", label: "Quality Control Program", suffix: "QCP" },
@@ -140,9 +149,20 @@ function triggerDownload(blob, filename) {
 
 async function downloadGeneratedQcp(projectId) {
   const apiBase = getApiBase();
-  const res = await fetch(`${apiBase}/api/docmaker/qcp/${encodeURIComponent(projectId)}`);
+  const requestUrl = `${apiBase}/api/docmaker/qcp/${encodeURIComponent(projectId)}`;
+  const res = await fetch(requestUrl);
   if (!res.ok) {
-    throw new Error("QCP generation failed.");
+    let detail = "";
+    try {
+      const data = await res.json();
+      detail = String(data?.error || "").trim();
+    } catch (err) {
+      detail = "";
+    }
+    const msg = detail
+      ? `QCP generation failed (${res.status}): ${detail}`
+      : `QCP generation failed (${res.status}) at ${requestUrl}`;
+    throw new Error(msg);
   }
   const blob = await res.blob();
   const safeProjectId = sanitizeFilenamePart(projectId || "PROJECT");
@@ -265,8 +285,9 @@ function createProjectCard(project) {
       if (!selected) return;
 
       if (def.id === "qcp") {
-        downloadGeneratedQcp(projectId).catch(() => {
-          alert("Failed to generate QCP file for this project.");
+        downloadGeneratedQcp(projectId).catch((err) => {
+          const msg = String(err?.message || "Failed to generate QCP file for this project.");
+          alert(msg);
         });
         return;
       }
