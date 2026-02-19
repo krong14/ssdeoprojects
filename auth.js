@@ -1,4 +1,4 @@
-﻿const USERS_KEY = "dpwh_users";
+const USERS_KEY = "dpwh_users";
 const SESSION_KEY = "dpwh_current_user";
 const ADMIN_EMAILS_KEY = "dpwh_admin_emails";
 const SUPERADMIN_EMAILS = [
@@ -620,7 +620,7 @@ function initLogin() {
 
     const users = loadUsers();
     const user = users.find(u => normalizeEmail(u.email) === email);
-    if (!user || user.password !== password) {
+    if (!user) {
       setMessage(messageEl, "Invalid email or password.");
       return;
     }
@@ -631,7 +631,7 @@ function initLogin() {
       if (status !== "approved") {
         const msg = status === "blocked"
           ? "Your account was blocked. Please contact the admin."
-          : "Your account is pending approval. Please wait for admin approval.";
+          : "Your account is pending admin approval. Please wait for confirmation.";
         setMessage(messageEl, msg);
         return;
       }
@@ -639,6 +639,11 @@ function initLogin() {
       user.status = "approved";
       if (isSuperAdmin) user.role = "superadmin";
       saveUsers(users);
+    }
+
+    if (user.password !== password) {
+      setMessage(messageEl, "Invalid email or password.");
+      return;
     }
 
     storeSession(user, Boolean(rememberInput?.checked));
