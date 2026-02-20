@@ -1,4 +1,4 @@
-﻿const USERS_KEY = "dpwh_users";
+const USERS_KEY = "dpwh_users";
 const SESSION_KEY = "dpwh_current_user";
 const ADMIN_EMAILS_KEY = "dpwh_admin_emails";
 const SUPERADMIN_EMAILS = [
@@ -11,7 +11,9 @@ const DEFAULT_MANAGED_ADMIN_EMAILS = [
 const PREAPPROVED_USER_EMAILS = [
   "vincecajefe@gmail.com",
   "kindredortillo25@gmail.com",
-  "castillovjane@gmail.com"
+  "castillovjane@gmail.com",
+  "eucelleturqueza2020@gmail.com",
+  "junelmabanag2@gmail.com"
 ];
 const EMPLOYEE_CODE_PREFIX = "DPWH";
 const SECTION_CODES = Object.freeze({
