@@ -308,6 +308,33 @@ function applyCompiledState(subitem, section, contract, docName) {
   }
 }
 
+function handleCompiledToggle(compiledInput) {
+  const panel = compiledInput.closest(".toc-item-panel");
+  const subitem = compiledInput.closest(".toc-subitem");
+  if (!panel || !subitem) return;
+  const section = panel.dataset.section || "";
+  const contract = panel.dataset.contract || "";
+  const doc = compiledInput.dataset.doc || "";
+  const by = String(currentUserName || currentUser?.name || "this user").trim();
+  if (compiledInput.checked) {
+    setCompiledEntry(section, doc, contract, {
+      by,
+      checkedAt: new Date().toISOString()
+    });
+  } else {
+    removeCompiledEntry(section, doc, contract);
+    const hasUploadedFile = Boolean(subitem.querySelector(".toc-item-view"));
+    if (!hasUploadedFile) {
+      const status = subitem.querySelector(".toc-item-status");
+      if (status) {
+        status.textContent = defaultDocStatusText;
+        status.classList.remove("is-compiled");
+      }
+    }
+  }
+  applyCompiledState(subitem, section, contract, doc);
+}
+
 async function refreshPanelRemote(panel) {
   if (!useRemoteStorage || !panel) return;
   const section = panel.dataset.section || "";
@@ -608,36 +635,13 @@ document.addEventListener("click", async (e) => {
     }
   });
 
-  document.addEventListener("change", (e) => {
+  document.addEventListener("input", (e) => {
     const compiledInput = e.target.closest(".toc-item-compiled input[type=\"checkbox\"]");
-    if (compiledInput) {
-      const panel = compiledInput.closest(".toc-item-panel");
-      const subitem = compiledInput.closest(".toc-subitem");
-      if (!panel || !subitem) return;
-      const section = panel.dataset.section || "";
-      const contract = panel.dataset.contract || "";
-      const doc = compiledInput.dataset.doc || "";
-      const by = String(currentUserName || currentUser?.name || "this user").trim();
-      if (compiledInput.checked) {
-        setCompiledEntry(section, doc, contract, {
-          by,
-          checkedAt: new Date().toISOString()
-        });
-      } else {
-        removeCompiledEntry(section, doc, contract);
-        const hasUploadedFile = Boolean(subitem.querySelector(".toc-item-view"));
-        if (!hasUploadedFile) {
-          const status = subitem.querySelector(".toc-item-status");
-          if (status) {
-            status.textContent = defaultDocStatusText;
-            status.classList.remove("is-compiled");
-          }
-        }
-      }
-      applyCompiledState(subitem, section, contract, doc);
-      return;
-    }
+    if (!compiledInput) return;
+    handleCompiledToggle(compiledInput);
+  });
 
+  document.addEventListener("change", (e) => {
     const input = e.target.closest(".toc-item-upload input[type=\"file\"]");
     if (!input) return;
     const panel = input.closest(".toc-item-panel");
