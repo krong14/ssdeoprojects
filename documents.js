@@ -106,6 +106,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
 const contractFilesKey = "contractFiles";
 const contractFilesDataKey = "contractFilesData";
+const compiledDocsKey = "compiledDocsByContractDoc";
 const documentDisplayLabels = {
   Contract: "Contract Aggrement"
 };
@@ -197,6 +198,45 @@ function getFileKey(section, contractId) {
   return `${section}:${String(contractId || "").trim().toUpperCase()}`;
 }
 
+function getCompiledKey(section, docName, contractId) {
+  return `${String(section || "").trim()}:${String(docName || "").trim()}:${String(contractId || "").trim().toUpperCase()}`;
+}
+
+function loadCompiledDocs() {
+  const raw = appStorage.getItem(compiledDocsKey);
+  if (!raw) return {};
+  try {
+    const parsed = JSON.parse(raw);
+    return parsed && typeof parsed === "object" ? parsed : {};
+  } catch (err) {
+    return {};
+  }
+}
+
+function saveCompiledDocs(data) {
+  appStorage.setItem(compiledDocsKey, JSON.stringify(data || {}));
+}
+
+function getCompiledEntry(section, docName, contractId) {
+  const store = loadCompiledDocs();
+  return store[getCompiledKey(section, docName, contractId)] || null;
+}
+
+function setCompiledEntry(section, docName, contractId, payload) {
+  const store = loadCompiledDocs();
+  store[getCompiledKey(section, docName, contractId)] = payload;
+  saveCompiledDocs(store);
+}
+
+function removeCompiledEntry(section, docName, contractId) {
+  const store = loadCompiledDocs();
+  const key = getCompiledKey(section, docName, contractId);
+  if (store[key]) {
+    delete store[key];
+    saveCompiledDocs(store);
+  }
+}
+
 function normalizeContractId(value) {
   return String(value || "").trim().toUpperCase();
 }
@@ -268,6 +308,23 @@ function applyRemoteDocState(subitem, entry) {
   }
 }
 
+function applyCompiledState(subitem, section, contract, docName) {
+  if (!subitem) return;
+  const status = subitem.querySelector(".toc-item-status");
+  const compiledInput = subitem.querySelector(".toc-item-compiled input[type=\"checkbox\"]");
+  const entry = getCompiledEntry(section, docName, contract);
+  const viewBtn = subitem.querySelector(".toc-item-view");
+  const hasUploadedFile = Boolean(viewBtn);
+  if (compiledInput) compiledInput.checked = Boolean(entry);
+  if (!hasUploadedFile && entry && status) {
+    const by = String(entry.by || "assigned user").trim();
+    status.textContent = `Compiled. Ask ${by} for the file.`;
+    status.classList.add("is-compiled");
+  } else if (status) {
+    status.classList.remove("is-compiled");
+  }
+}
+
 async function refreshPanelRemote(panel) {
   if (!useRemoteStorage || !panel) return;
   const section = panel.dataset.section || "";
@@ -288,6 +345,7 @@ async function refreshPanelRemote(panel) {
       || "";
     const entry = docName ? sectionDocs[docName] : null;
     applyRemoteDocState(subitem, entry || null);
+    applyCompiledState(subitem, section, contract, docName);
   });
 }
 
@@ -411,6 +469,10 @@ document.addEventListener('DOMContentLoaded', () => {
                       <div class="toc-item-status">${currentFile ? `File: ${currentFile}` : "No file uploaded"}</div>
                     </div>
                     <div class="toc-item-actions">
+                      <label class="toc-item-compiled" title="Mark as compiled">
+                        <input type="checkbox" data-doc="${doc}">
+                        <span>Compiled</span>
+                      </label>
                       ${hasFileData ? `
                         <button class="toc-item-view" type="button" data-doc="${doc}">
                           <i class='bx bx-show'></i>
@@ -438,6 +500,15 @@ document.addEventListener('DOMContentLoaded', () => {
         sectionEl.appendChild(li);
       });
       if (!list.length) renderEmpty(sectionEl);
+    });
+    document.querySelectorAll(".toc-item-panel").forEach(panel => {
+      const section = panel.dataset.section || "";
+      const contract = panel.dataset.contract || "";
+      panel.querySelectorAll(".toc-subitem").forEach(subitem => {
+        const doc = subitem.querySelector(".toc-item-compiled input[type=\"checkbox\"]")?.dataset.doc || "";
+        if (!doc) return;
+        applyCompiledState(subitem, section, contract, doc);
+      });
     });
   }
 
@@ -546,12 +617,34 @@ document.addEventListener("click", async (e) => {
         const view = subitem?.querySelector(".toc-item-view");
         view?.remove();
         deleteBtn.remove();
+        applyCompiledState(subitem, section, contract, doc);
       }
       return;
     }
   });
 
   document.addEventListener("change", (e) => {
+    const compiledInput = e.target.closest(".toc-item-compiled input[type=\"checkbox\"]");
+    if (compiledInput) {
+      const panel = compiledInput.closest(".toc-item-panel");
+      const subitem = compiledInput.closest(".toc-subitem");
+      if (!panel || !subitem) return;
+      const section = panel.dataset.section || "";
+      const contract = panel.dataset.contract || "";
+      const doc = compiledInput.dataset.doc || "";
+      const by = String(currentUserName || currentUser?.name || "this user").trim();
+      if (compiledInput.checked) {
+        setCompiledEntry(section, doc, contract, {
+          by,
+          checkedAt: new Date().toISOString()
+        });
+      } else {
+        removeCompiledEntry(section, doc, contract);
+      }
+      applyCompiledState(subitem, section, contract, doc);
+      return;
+    }
+
     const input = e.target.closest(".toc-item-upload input[type=\"file\"]");
     if (!input) return;
     const panel = input.closest(".toc-item-panel");
@@ -612,6 +705,7 @@ document.addEventListener("click", async (e) => {
       saveContractFilesData(fileData);
 
       if (status) status.textContent = `File: ${file.name}`;
+      status?.classList.remove("is-compiled");
       const actions = subitem?.querySelector(".toc-item-actions");
       const existingDelete = actions?.querySelector(".toc-item-delete");
       if (actions && !existingDelete) {
