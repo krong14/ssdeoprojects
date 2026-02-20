@@ -154,6 +154,11 @@
   color: var(--text-muted);
 }
 
+.toc-item-status.is-compiled {
+  color: #16a34a;
+  font-weight: 600;
+}
+
 .toc-item-upload {
   display: inline-flex;
   align-items: center;
@@ -208,6 +213,22 @@
   align-items: center;
   gap: 10px;
   justify-self: end;
+}
+
+.toc-item-compiled {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: var(--text-color);
+  cursor: pointer;
+  user-select: none;
+}
+
+.toc-item-compiled input[type="checkbox"] {
+  width: 14px;
+  height: 14px;
+  accent-color: #16a34a;
 }
 
 .toc-item-view {
