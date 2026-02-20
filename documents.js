@@ -107,6 +107,7 @@ document.addEventListener('DOMContentLoaded', () => {
 const contractFilesKey = "contractFiles";
 const contractFilesDataKey = "contractFilesData";
 const compiledDocsKey = "compiledDocsByContractDoc";
+const defaultDocStatusText = "Not compiled yet.";
 const documentDisplayLabels = {
   Contract: "Contract Aggrement"
 };
@@ -302,7 +303,7 @@ function applyRemoteDocState(subitem, entry) {
       actions.appendChild(deleteBtn);
     }
   } else {
-    if (status) status.textContent = "No file uploaded";
+    if (status) status.textContent = defaultDocStatusText;
     actions.querySelector(".toc-item-view")?.remove();
     actions.querySelector(".toc-item-delete")?.remove();
   }
@@ -466,7 +467,7 @@ document.addEventListener('DOMContentLoaded', () => {
                   <li class="toc-subitem">
                     <div class="toc-item-info">
                       <div class="subitem-title">${displayDoc}</div>
-                      <div class="toc-item-status">${currentFile ? `File: ${currentFile}` : "No file uploaded"}</div>
+                      <div class="toc-item-status">${currentFile ? `File: ${currentFile}` : defaultDocStatusText}</div>
                       <label class="toc-item-compiled toc-item-compiled-left" title="Mark as compiled">
                         <input type="checkbox" data-doc="${doc}">
                         <span>Compiled</span>
@@ -615,7 +616,7 @@ document.addEventListener("click", async (e) => {
         }
         removeCompiledEntry(section, doc, contract);
         const status = subitem?.querySelector(".toc-item-status");
-        if (status) status.textContent = "No file uploaded";
+        if (status) status.textContent = defaultDocStatusText;
         const view = subitem?.querySelector(".toc-item-view");
         view?.remove();
         deleteBtn.remove();
