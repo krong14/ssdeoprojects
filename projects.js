@@ -1,4 +1,4 @@
-const body = document.querySelector("body")
+﻿const body = document.querySelector("body")
 const sidebar = body.querySelector(".sidebar")
 const toggle = body.querySelector(".toggle")
 const modeSwitch = body.querySelector(".toggle-switch")

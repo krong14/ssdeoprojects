@@ -25,6 +25,7 @@ try {
 
 const isAdmin = Boolean(sessionData?.isAdmin);
 const isSuperAdmin = Boolean(sessionData?.isSuperAdmin || sessionData?.role === "superadmin");
+const canAccessAdmin = isAdmin || isSuperAdmin;
 window.DPWH_CURRENT_USER = sessionData || null;
 window.DPWH_IS_ADMIN = isAdmin;
 window.DPWH_IS_SUPERADMIN = isSuperAdmin;
@@ -71,12 +72,20 @@ if (sidebarOfficeLabel) {
 }
 
 document.querySelectorAll("[data-admin-only]").forEach(el => {
-  el.style.display = "flex";
+  el.style.display = canAccessAdmin ? "flex" : "none";
 });
 
 document.querySelectorAll("[data-superadmin-only]").forEach(el => {
-  el.style.display = "flex";
+  el.style.display = isSuperAdmin ? "flex" : "none";
 });
+
+if (window.location.pathname.endsWith("docmaker.html") && !isSuperAdmin) {
+  window.location.href = "dashboard.html";
+}
+
+if (window.location.pathname.endsWith("admin.html") && !canAccessAdmin) {
+  window.location.href = "dashboard.html";
+}
 
 document.addEventListener("click", (e) => {
   const logoutLink = e.target.closest("[data-logout]");
