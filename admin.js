@@ -10,7 +10,9 @@ const DEFAULT_MANAGED_ADMIN_EMAILS = [
 const PREAPPROVED_USER_EMAILS = [
   "vincecajefe@gmail.com",
   "kindredortillo25@gmail.com",
-  "castillovjane@gmail.com"
+  "castillovjane@gmail.com",
+  "eucelleturqueza2020@gmail.com",
+  "junelmabanag2@gmail.com"
 ];
 
 const body = document.querySelector("body");
