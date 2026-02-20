@@ -52,7 +52,6 @@ modeSwitch?.addEventListener("click", () => {
 // Navigation transition handlers
 document.addEventListener('DOMContentLoaded', () => {
   (function () {
-    const page = document.querySelector('section') || document.body;
     const current = window.location.pathname.split('/').pop() || 'documents.html';
 
     // Active link highlighting
@@ -67,27 +66,7 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     });
 
-    // Entry animation based on previous page
-    const t = sessionStorage.getItem('pageTransition');
-    if (t === 'sidebar') {
-      page.classList.add('page-enter');
-      sessionStorage.removeItem('pageTransition');
-    }
-
-    // Intercept sidebar links and animate exit before navigating
-    document.querySelectorAll('.menu-links a[href$=".html"]').forEach(a => {
-      a.addEventListener('click', (ev) => {
-        const href = a.getAttribute('href');
-        if (!href) return;
-        const target = href.split('/').pop();
-        if (target === current) return;
-
-        ev.preventDefault();
-        page.classList.add('page-exit');
-        sessionStorage.setItem('pageTransition', 'sidebar');
-        setTimeout(() => window.location.href = href, 310);
-      });
-    });
+    // Keep direct navigation (no transition animation).
   })();
 });
 
@@ -686,11 +665,6 @@ document.addEventListener("click", async (e) => {
         file
       })
         .then(() => {
-          const by = String(currentUserName || currentUser?.name || "this user").trim();
-          setCompiledEntry(section, doc, contract, {
-            by,
-            checkedAt: new Date().toISOString()
-          });
           remoteDocCache.delete(normalizeContractId(contract));
           return refreshPanelRemote(panel);
         })
@@ -722,11 +696,6 @@ document.addEventListener("click", async (e) => {
       };
       saveContractFiles(fileStore);
       saveContractFilesData(fileData);
-      const by = String(currentUserName || currentUser?.name || "this user").trim();
-      setCompiledEntry(section, doc, contract, {
-        by,
-        checkedAt: new Date().toISOString()
-      });
 
       if (status) status.textContent = `File: ${file.name}`;
       status?.classList.remove("is-compiled");
