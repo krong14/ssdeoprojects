@@ -315,7 +315,7 @@ function applyCompiledState(subitem, section, contract, docName) {
   const entry = getCompiledEntry(section, docName, contract);
   const viewBtn = subitem.querySelector(".toc-item-view");
   const hasUploadedFile = Boolean(viewBtn);
-  if (compiledInput) compiledInput.checked = Boolean(entry);
+  if (compiledInput) compiledInput.checked = hasUploadedFile || Boolean(entry);
   if (!hasUploadedFile && entry && status) {
     const by = String(entry.by || "assigned user").trim();
     status.textContent = `Compiled. Ask ${by} for the file.`;
@@ -467,12 +467,12 @@ document.addEventListener('DOMContentLoaded', () => {
                     <div class="toc-item-info">
                       <div class="subitem-title">${displayDoc}</div>
                       <div class="toc-item-status">${currentFile ? `File: ${currentFile}` : "No file uploaded"}</div>
-                    </div>
-                    <div class="toc-item-actions">
-                      <label class="toc-item-compiled" title="Mark as compiled">
+                      <label class="toc-item-compiled toc-item-compiled-left" title="Mark as compiled">
                         <input type="checkbox" data-doc="${doc}">
                         <span>Compiled</span>
                       </label>
+                    </div>
+                    <div class="toc-item-actions">
                       ${hasFileData ? `
                         <button class="toc-item-view" type="button" data-doc="${doc}">
                           <i class='bx bx-show'></i>
@@ -595,6 +595,7 @@ document.addEventListener("click", async (e) => {
       if (useRemoteStorage) {
         try {
           await deleteRemoteDocument({ contractId: contract, section, docName: doc });
+          removeCompiledEntry(section, doc, contract);
           remoteDocCache.delete(normalizeContractId(contract));
           await refreshPanelRemote(panel);
         } catch (err) {
@@ -612,6 +613,7 @@ document.addEventListener("click", async (e) => {
           delete fileData[fileKey];
           saveContractFilesData(fileData);
         }
+        removeCompiledEntry(section, doc, contract);
         const status = subitem?.querySelector(".toc-item-status");
         if (status) status.textContent = "No file uploaded";
         const view = subitem?.querySelector(".toc-item-view");
@@ -672,6 +674,11 @@ document.addEventListener("click", async (e) => {
         file
       })
         .then(() => {
+          const by = String(currentUserName || currentUser?.name || "this user").trim();
+          setCompiledEntry(section, doc, contract, {
+            by,
+            checkedAt: new Date().toISOString()
+          });
           remoteDocCache.delete(normalizeContractId(contract));
           return refreshPanelRemote(panel);
         })
@@ -703,6 +710,11 @@ document.addEventListener("click", async (e) => {
       };
       saveContractFiles(fileStore);
       saveContractFilesData(fileData);
+      const by = String(currentUserName || currentUser?.name || "this user").trim();
+      setCompiledEntry(section, doc, contract, {
+        by,
+        checkedAt: new Date().toISOString()
+      });
 
       if (status) status.textContent = `File: ${file.name}`;
       status?.classList.remove("is-compiled");
@@ -725,6 +737,7 @@ document.addEventListener("click", async (e) => {
         viewBtn.innerHTML = "<i class='bx bx-show'></i> View";
         actions?.insertBefore(viewBtn, actions.firstChild);
       }
+      applyCompiledState(subitem, section, contract, doc);
     };
     reader.onerror = () => {
       if (status) status.textContent = "Upload failed.";
