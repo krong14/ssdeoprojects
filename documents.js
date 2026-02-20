@@ -316,11 +316,14 @@ function applyCompiledState(subitem, section, contract, docName) {
   const entry = getCompiledEntry(section, docName, contract);
   const viewBtn = subitem.querySelector(".toc-item-view");
   const hasUploadedFile = Boolean(viewBtn);
-  if (compiledInput) compiledInput.checked = hasUploadedFile || Boolean(entry);
+  if (compiledInput) compiledInput.checked = Boolean(entry);
   if (!hasUploadedFile && entry && status) {
     const by = String(entry.by || "assigned user").trim();
     status.textContent = `Compiled. Ask ${by} for the file.`;
     status.classList.add("is-compiled");
+  } else if (!hasUploadedFile && status) {
+    status.textContent = defaultDocStatusText;
+    status.classList.remove("is-compiled");
   } else if (status) {
     status.classList.remove("is-compiled");
   }
@@ -643,6 +646,14 @@ document.addEventListener("click", async (e) => {
         });
       } else {
         removeCompiledEntry(section, doc, contract);
+        const hasUploadedFile = Boolean(subitem.querySelector(".toc-item-view"));
+        if (!hasUploadedFile) {
+          const status = subitem.querySelector(".toc-item-status");
+          if (status) {
+            status.textContent = defaultDocStatusText;
+            status.classList.remove("is-compiled");
+          }
+        }
       }
       applyCompiledState(subitem, section, contract, doc);
       return;
